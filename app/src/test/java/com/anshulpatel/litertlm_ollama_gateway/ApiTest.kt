@@ -28,8 +28,8 @@ class ApiTest {
         val details = ModelDetails(
             format = "gguf",
             family = "llama",
-            parameter_size = "7B",
-            quantization_level = "Q4_0"
+            parameterSize = "7B",
+            quantizationLevel = "Q4_0"
         )
         val modelInfo = ModelInfo(
             name = "llama3",
@@ -43,5 +43,21 @@ class ApiTest {
         val serialized = json.encodeToString(response)
         assertTrue(serialized.contains("\"name\":\"llama3\""))
         assertTrue(serialized.contains("\"details\":{"))
+    }
+
+    @Test
+    fun testChatResponseSerialization() {
+        val response = ChatResponse(
+            model = "llama3",
+            createdAt = "2024-05-01T12:00:00Z",
+            message = ChatMessage(
+                role = "assistant",
+                content = "hello"
+            ),
+            done = true
+        )
+        val serialized = json.encodeToString(response)
+        assertTrue(serialized.contains("\"role\":\"assistant\""))
+        assertTrue(serialized.contains("\"content\":\"hello\""))
     }
 }

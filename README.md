@@ -4,7 +4,7 @@ A high-performance, long-running REST API server for Android that implements the
 
 ## Features
 
-- **Ollama API Compatibility**: Implements `/api/generate`, `/api/tags`, and `/api/show` endpoints.
+- **Ollama API Compatibility**: Implements `/api/generate`, `/api/chat`, `/api/tags`, and `/api/show` endpoints.
 - **Persistent Server**: Runs as an Android Foreground Service (`specialUse`) to ensure 24/7 availability even with the screen off.
 - **Network Discovery**: Automatically binds to all local network interfaces (0.0.0.0) for easy access via device IP.
 - **Observability**:

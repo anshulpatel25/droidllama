@@ -76,3 +76,35 @@ data class ShowResponse(
     val template: String? = null,
     val details: ModelDetails
 )
+
+@OptIn(InternalSerializationApi::class)
+@Serializable
+data class ChatRequest(
+    val model: String,
+    val messages: List<ChatMessage>,
+    val stream: Boolean = true,
+    val format: String? = null,
+    val options: Map<String, String>? = null,
+    @SerialName("keep_alive") val keepAlive: String? = null
+)
+
+@OptIn(InternalSerializationApi::class)
+@Serializable
+data class ChatMessage(
+    val role: String,
+    val content: String,
+    val images: List<String>? = null
+)
+
+@OptIn(InternalSerializationApi::class)
+@Serializable
+data class ChatResponse(
+    val model: String,
+    @SerialName("created_at") val createdAt: String,
+    val message: ChatMessage,
+    val done: Boolean,
+    @SerialName("total_duration") val totalDuration: Long? = null,
+    @SerialName("load_duration") val loadDuration: Long? = null,
+    @SerialName("prompt_eval_count") val promptEvalCount: Int? = null,
+    @SerialName("eval_count") val evalCount: Int? = null
+)
