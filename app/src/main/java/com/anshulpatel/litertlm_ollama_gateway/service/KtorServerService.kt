@@ -72,7 +72,7 @@ class KtorServerService : Service() {
                 LiteRTLMManager.initialize(savedModelPath, maxTokens)
             }
         } else {
-            LokiLogger.log(LogLevel.WARN, "KtorServerService", "No model path found. Inference will fail.")
+            LokiLogger.log(LogLevel.ERROR, "KtorServerService", "No model path found. LiteRT-LM will NOT be initialized.")
         }
 
         startForegroundService()
