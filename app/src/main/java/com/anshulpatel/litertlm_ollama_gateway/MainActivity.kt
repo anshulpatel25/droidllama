@@ -5,15 +5,20 @@ import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.anshulpatel.litertlm_ollama_gateway.inference.LiteRTLMManager
 import com.anshulpatel.litertlm_ollama_gateway.logging.LogLevel
 import com.anshulpatel.litertlm_ollama_gateway.service.KtorServerService
 import com.anshulpatel.litertlm_ollama_gateway.ui.theme.LiteRTLOllamaGatewayTheme
+import java.io.File
+import java.io.FileOutputStream
 import java.net.InetAddress
 import java.net.NetworkInterface
 import kotlin.time.Duration.Companion.seconds
@@ -35,11 +40,26 @@ class MainActivity : ComponentActivity() {
         var lokiUrl by remember { mutableStateOf("") }
         var selectedLogLevel by remember { mutableStateOf(LogLevel.INFO) }
         var isServerRunning by remember { mutableStateOf(KtorServerService.isRunning) }
+        var activeBackend by remember { mutableStateOf(LiteRTLMManager.activeBackend) }
         val deviceIp = remember { getLocalIpAddress() ?: "Unknown" }
+        var modelPath by remember { mutableStateOf(getSavedModelPath() ?: "No model selected") }
+
+        val filePickerLauncher = rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.GetContent()
+        ) { uri ->
+            uri?.let {
+                val path = copyFileToInternalStorage(it, "selected_model.litertlm")
+                if (path != null) {
+                    saveModelPath(path)
+                    modelPath = path
+                }
+            }
+        }
 
         LaunchedEffect(Unit) {
             while (true) {
                 isServerRunning = KtorServerService.isRunning
+                activeBackend = LiteRTLMManager.activeBackend
                 kotlinx.coroutines.delay(1.seconds)
             }
         }
@@ -49,7 +69,29 @@ class MainActivity : ComponentActivity() {
             Spacer(modifier = Modifier.height(8.dp))
             Text(text = "Server IP: $deviceIp:${KtorServerService.PORT}")
             Text(text = "Status: ${if (isServerRunning) "Running" else "Stopped"}")
+            if (isServerRunning) {
+                Text(
+                    text = "Inference Backend: ${activeBackend.name}",
+                    color = if (activeBackend == LiteRTLMManager.BackendType.GPU) 
+                        MaterialTheme.colorScheme.primary 
+                    else if (activeBackend == LiteRTLMManager.BackendType.CPU) 
+                        MaterialTheme.colorScheme.secondary 
+                    else 
+                        MaterialTheme.colorScheme.error
+                )
+            }
             
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text(text = "Model Settings:", style = MaterialTheme.typography.titleMedium)
+            Text(text = "Path: $modelPath", style = MaterialTheme.typography.bodySmall)
+            Button(
+                onClick = { filePickerLauncher.launch("*/*") },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Select .litertlm Model")
+            }
+
             Spacer(modifier = Modifier.height(16.dp))
 
             OutlinedTextField(
@@ -123,5 +165,29 @@ class MainActivity : ComponentActivity() {
             e.printStackTrace()
         }
         return null
+    }
+
+    private fun getSavedModelPath(): String? {
+        return getSharedPreferences("gateway_prefs", MODE_PRIVATE).getString("model_path", null)
+    }
+
+    private fun saveModelPath(path: String) {
+        getSharedPreferences("gateway_prefs", MODE_PRIVATE).edit().putString("model_path", path).apply()
+    }
+
+    private fun copyFileToInternalStorage(uri: android.net.Uri, fileName: String): String? {
+        return try {
+            val inputStream = contentResolver.openInputStream(uri) ?: return null
+            val file = File(filesDir, fileName)
+            inputStream.use { input ->
+                FileOutputStream(file).use { output ->
+                    input.copyTo(output)
+                }
+            }
+            file.absolutePath
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
     }
 }

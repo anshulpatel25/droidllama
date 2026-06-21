@@ -26,6 +26,10 @@ The project follows Clean Architecture principles:
 4. **Networking**:
     - Server binds to port `11434` on `0.0.0.0`.
     - Always verify IP retrieval logic in `MainActivity.kt`.
+5. **LiteRT-LM Inference**:
+    - Models are selected via file picker and copied to internal storage.
+    - Prompt formatting uses Gemma template: `<start_of_turn>user\n{prompt}<end_of_turn>\n<start_of_turn>model\n`.
+    - `LiteRTLMManager` handles singleton model lifecycle.
 
 ## Current Status
 
@@ -33,7 +37,7 @@ The project follows Clean Architecture principles:
 - [x] Ollama API: Mock implementation of Generate, Tags, Show, and Chat.
 - [x] Observability: Prometheus metrics and Loki logging.
 - [x] UI: Theme-aware management interface.
-- [ ] real-llm-integration: (Planned) Integration with LiteRT / On-device models.
+- [x] real-llm-integration: Integrated LiteRT-LM (Gemma 2B) via file picker.
 
 ## How to update documentation
 
