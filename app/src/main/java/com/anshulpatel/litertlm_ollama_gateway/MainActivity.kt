@@ -75,14 +75,16 @@ class MainActivity : ComponentActivity() {
             Text(text = "Server IP: $deviceIp:${KtorServerService.PORT}")
             Text(text = "Status: ${if (isServerRunning) "Running" else "Stopped"}")
             if (isServerRunning) {
+                val backendColor = when (activeBackend) {
+                    LiteRTLMManager.BackendType.GPU -> MaterialTheme.colorScheme.primary
+                    LiteRTLMManager.BackendType.CPU -> MaterialTheme.colorScheme.secondary
+                    LiteRTLMManager.BackendType.INITIALIZING -> MaterialTheme.colorScheme.tertiary
+                    else -> MaterialTheme.colorScheme.error
+                }
+                
                 Text(
                     text = "Inference Backend: ${activeBackend.name}",
-                    color = if (activeBackend == LiteRTLMManager.BackendType.GPU) 
-                        MaterialTheme.colorScheme.primary 
-                    else if (activeBackend == LiteRTLMManager.BackendType.CPU) 
-                        MaterialTheme.colorScheme.secondary 
-                    else 
-                        MaterialTheme.colorScheme.error
+                    color = backendColor
                 )
             }
             

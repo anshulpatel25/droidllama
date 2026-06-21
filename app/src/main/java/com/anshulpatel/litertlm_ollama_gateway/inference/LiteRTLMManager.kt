@@ -27,7 +27,7 @@ object LiteRTLMManager {
     )
 
     enum class BackendType {
-        GPU, CPU, NONE
+        GPU, CPU, NONE, INITIALIZING, ERROR
     }
 
     var activeBackend: BackendType = BackendType.NONE
@@ -36,6 +36,7 @@ object LiteRTLMManager {
     suspend fun initialize(modelPath: String, maxTokens: Int? = 2048) = withContext(Dispatchers.IO) {
         if (currentModelPath == modelPath && engine != null) return@withContext
 
+        activeBackend = BackendType.INITIALIZING
         engine?.close()
         
         try {
@@ -69,11 +70,11 @@ object LiteRTLMManager {
                 activeBackend = BackendType.CPU
                 LokiLogger.log(LogLevel.INFO, TAG, "LiteRT-LM engine initialized with CPU fallback.")
             } catch (e2: Exception) {
-                LokiLogger.log(LogLevel.ERROR, TAG, "Failed to initialize CPU backend: ${e2.localizedMessage}")
+                LokiLogger.log(LogLevel.ERROR, TAG, "CRITICAL: Failed to initialize any LiteRT-LM backend: ${e2.localizedMessage}")
                 e2.printStackTrace()
                 engine = null
                 currentModelPath = null
-                activeBackend = BackendType.NONE
+                activeBackend = BackendType.ERROR
             }
         }
     }
