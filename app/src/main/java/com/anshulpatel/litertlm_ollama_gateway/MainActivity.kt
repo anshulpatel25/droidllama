@@ -84,6 +84,12 @@ class MainActivity : ComponentActivity() {
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(text = "Model Settings:", style = MaterialTheme.typography.titleMedium)
+            Text(
+                text = "Note: This gateway currently only supports Gemma 4 E2B (4-bit). Please select a compatible .litertlm model file.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(vertical = 4.dp)
+            )
             Text(text = "Path: $modelPath", style = MaterialTheme.typography.bodySmall)
             Button(
                 onClick = { filePickerLauncher.launch("*/*") },
