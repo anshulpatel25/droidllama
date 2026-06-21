@@ -4,8 +4,10 @@ import com.anshulpatel.litertlm_ollama_gateway.logging.LogLevel
 import com.anshulpatel.litertlm_ollama_gateway.logging.LokiLogger
 import com.google.ai.edge.litertlm.Backend
 import com.google.ai.edge.litertlm.Content
+import com.google.ai.edge.litertlm.ConversationConfig
 import com.google.ai.edge.litertlm.Engine
 import com.google.ai.edge.litertlm.EngineConfig
+import com.google.ai.edge.litertlm.SamplerConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.withContext
@@ -16,6 +18,14 @@ object LiteRTLMManager {
 
     private const val TAG = "LiteRTLMManager"
 
+    data class InferenceOptions(
+        val temperature: Double? = null,
+        val topK: Int? = null,
+        val topP: Double? = null,
+        val maxTokens: Int? = null,
+        val thinking: Boolean = false
+    )
+
     enum class BackendType {
         GPU, CPU, NONE
     }
@@ -23,7 +33,7 @@ object LiteRTLMManager {
     var activeBackend: BackendType = BackendType.NONE
         private set
 
-    suspend fun initialize(modelPath: String) = withContext(Dispatchers.IO) {
+    suspend fun initialize(modelPath: String, maxTokens: Int? = 2048) = withContext(Dispatchers.IO) {
         if (currentModelPath == modelPath && engine != null) return@withContext
 
         engine?.close()
@@ -33,7 +43,8 @@ object LiteRTLMManager {
             LokiLogger.log(LogLevel.INFO, TAG, "Initializing LiteRT-LM engine with GPU backend...")
             val config = EngineConfig(
                 modelPath = modelPath,
-                backend = Backend.GPU()
+                backend = Backend.GPU(),
+                maxNumTokens = maxTokens
             )
             val newEngine = Engine(config)
             newEngine.initialize()
@@ -48,7 +59,8 @@ object LiteRTLMManager {
             try {
                 val config = EngineConfig(
                     modelPath = modelPath,
-                    backend = Backend.CPU()
+                    backend = Backend.CPU(),
+                    maxNumTokens = maxTokens
                 )
                 val newEngine = Engine(config)
                 newEngine.initialize()
@@ -66,14 +78,28 @@ object LiteRTLMManager {
         }
     }
 
-    suspend fun generateResponse(prompt: String): String = withContext(Dispatchers.Default) {
+    suspend fun generateResponse(prompt: String, options: InferenceOptions = InferenceOptions()): String = withContext(Dispatchers.Default) {
         val currentEngine = engine ?: return@withContext "Engine not initialized"
         
         // Gemma prompt template
-        val formattedPrompt = "<start_of_turn>user\n$prompt<end_of_turn>\n<start_of_turn>model\n"
+        val formattedPrompt = if (options.thinking) {
+            "<start_of_turn>user\nThink carefully and then answer: $prompt<end_of_turn>\n<start_of_turn>model\n<thought>\n"
+        } else {
+            "<start_of_turn>user\n$prompt<end_of_turn>\n<start_of_turn>model\n"
+        }
         
+        val samplerConfig = if (options.temperature != null || options.topK != null || options.topP != null) {
+            SamplerConfig(
+                topK = options.topK ?: 40,
+                topP = options.topP ?: 0.9,
+                temperature = options.temperature ?: 0.7
+            )
+        } else null
+
+        val convConfig = ConversationConfig(samplerConfig = samplerConfig)
+
         return@withContext try {
-            currentEngine.createConversation().use { conversation ->
+            currentEngine.createConversation(convConfig).use { conversation ->
                 val response = conversation.sendMessage(formattedPrompt)
                 response.contents.contents
                     .filterIsInstance<Content.Text>()
@@ -84,16 +110,30 @@ object LiteRTLMManager {
         }
     }
 
-    suspend fun generateResponseAsync(prompt: String, onToken: (String, Boolean) -> Unit) = withContext(Dispatchers.Default) {
+    suspend fun generateResponseAsync(prompt: String, options: InferenceOptions = InferenceOptions(), onToken: (String, Boolean) -> Unit) = withContext(Dispatchers.Default) {
         val currentEngine = engine ?: run {
             onToken("Engine not initialized", true)
             return@withContext
         }
 
-        val formattedPrompt = "<start_of_turn>user\n$prompt<end_of_turn>\n<start_of_turn>model\n"
+        val formattedPrompt = if (options.thinking) {
+            "<start_of_turn>user\nThink carefully and then answer: $prompt<end_of_turn>\n<start_of_turn>model\n<thought>\n"
+        } else {
+            "<start_of_turn>user\n$prompt<end_of_turn>\n<start_of_turn>model\n"
+        }
+        
+        val samplerConfig = if (options.temperature != null || options.topK != null || options.topP != null) {
+            SamplerConfig(
+                topK = options.topK ?: 40,
+                topP = options.topP ?: 0.9,
+                temperature = options.temperature ?: 0.7
+            )
+        } else null
+
+        val convConfig = ConversationConfig(samplerConfig = samplerConfig)
         
         try {
-            currentEngine.createConversation().use { conversation ->
+            currentEngine.createConversation(convConfig).use { conversation ->
                 conversation.sendMessageAsync(formattedPrompt).collect { message ->
                     val token = message.contents.contents
                         .filterIsInstance<Content.Text>()

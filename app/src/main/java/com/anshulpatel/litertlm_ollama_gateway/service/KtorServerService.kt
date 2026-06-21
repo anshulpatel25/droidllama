@@ -27,6 +27,11 @@ import io.ktor.server.routing.*
 import io.micrometer.prometheusmetrics.PrometheusConfig
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import kotlinx.coroutines.*
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.booleanOrNull
+import kotlinx.serialization.json.doubleOrNull
+import kotlinx.serialization.json.intOrNull
 import org.slf4j.event.Level
 import java.util.*
 
@@ -58,10 +63,12 @@ class KtorServerService : Service() {
         LokiLogger.log(LogLevel.INFO, "KtorServerService", "Starting server service...")
 
         val savedModelPath = getSharedPreferences("gateway_prefs", MODE_PRIVATE).getString("model_path", null)
+        val maxTokens = getSharedPreferences("gateway_prefs", MODE_PRIVATE).getString("max_tokens", "2048")?.toIntOrNull() ?: 2048
+        
         if (savedModelPath != null) {
-            LokiLogger.log(LogLevel.INFO, "KtorServerService", "Initializing LiteRT-LM with: $savedModelPath")
+            LokiLogger.log(LogLevel.INFO, "KtorServerService", "Initializing LiteRT-LM with: $savedModelPath, context: $maxTokens")
             CoroutineScope(Dispatchers.IO).launch {
-                LiteRTLMManager.initialize(savedModelPath)
+                LiteRTLMManager.initialize(savedModelPath, maxTokens)
             }
         } else {
             LokiLogger.log(LogLevel.WARN, "KtorServerService", "No model path found. Inference will fail.")
@@ -73,6 +80,25 @@ class KtorServerService : Service() {
         
         isRunning = true
         return START_STICKY
+    }
+
+    private fun extractInferenceOptions(options: Map<String, JsonElement>?): LiteRTLMManager.InferenceOptions {
+        val prefs = getSharedPreferences("gateway_prefs", MODE_PRIVATE)
+        val defaultThinking = prefs.getBoolean("enable_thinking", false)
+        val defaultTemp = prefs.getString("default_temp", "0.7")?.toDoubleOrNull() ?: 0.7
+
+        if (options == null) return LiteRTLMManager.InferenceOptions(
+            temperature = defaultTemp,
+            thinking = defaultThinking
+        )
+
+        return LiteRTLMManager.InferenceOptions(
+            temperature = (options["temperature"] as? JsonPrimitive)?.doubleOrNull ?: defaultTemp,
+            topK = (options["top_k"] as? JsonPrimitive)?.intOrNull,
+            topP = (options["top_p"] as? JsonPrimitive)?.doubleOrNull,
+            maxTokens = (options["num_predict"] as? JsonPrimitive)?.intOrNull,
+            thinking = (options["thinking"] as? JsonPrimitive)?.booleanOrNull ?: defaultThinking
+        )
     }
 
     private fun startForegroundService() {
@@ -100,7 +126,11 @@ class KtorServerService : Service() {
 
         server = embeddedServer(CIO, port = PORT, host = "0.0.0.0") {
             install(ContentNegotiation) {
-                json()
+                json(kotlinx.serialization.json.Json {
+                    ignoreUnknownKeys = true
+                    isLenient = true
+                    encodeDefaults = true
+                })
             }
             install(CallId) {
                 generate { UUID.randomUUID().toString() }
@@ -144,7 +174,8 @@ class KtorServerService : Service() {
                         val traceId = call.callId
                         LokiLogger.log(LogLevel.INFO, "OllamaAPI", "Generate request for model: ${request.model}", traceId)
                         
-                        val generatedText = LiteRTLMManager.generateResponse(request.prompt)
+                        val options = extractInferenceOptions(request.options)
+                        val generatedText = LiteRTLMManager.generateResponse(request.prompt, options)
                         
                         val response = GenerateResponse(
                             model = request.model,
@@ -202,7 +233,8 @@ class KtorServerService : Service() {
                         LokiLogger.log(LogLevel.INFO, "OllamaAPI", "Chat request for model: ${request.model}", traceId)
 
                         val lastMessage = request.messages.lastOrNull()?.content ?: ""
-                        val generatedText = LiteRTLMManager.generateResponse(lastMessage)
+                        val options = extractInferenceOptions(request.options)
+                        val generatedText = LiteRTLMManager.generateResponse(lastMessage, options)
 
                         val response = ChatResponse(
                             model = request.model,
