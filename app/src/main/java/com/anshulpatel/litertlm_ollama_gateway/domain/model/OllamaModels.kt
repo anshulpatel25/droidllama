@@ -3,6 +3,7 @@ package com.anshulpatel.litertlm_ollama_gateway.domain.model
 import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonElement
 
 @OptIn(InternalSerializationApi::class)
 @Serializable
@@ -11,7 +12,7 @@ data class GenerateRequest(
     val prompt: String,
     val stream: Boolean = true,
     val format: String? = null,
-    val options: Map<String, String>? = null,
+    val options: Map<String, JsonElement>? = null,
     val system: String? = null,
     val template: String? = null,
     val context: List<Int>? = null,
@@ -84,7 +85,7 @@ data class ChatRequest(
     val messages: List<ChatMessage>,
     val stream: Boolean = true,
     val format: String? = null,
-    val options: Map<String, String>? = null,
+    val options: Map<String, JsonElement>? = null,
     @SerialName("keep_alive") val keepAlive: String? = null
 )
 

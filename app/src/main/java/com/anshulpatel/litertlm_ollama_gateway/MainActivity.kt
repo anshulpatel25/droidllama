@@ -43,6 +43,11 @@ class MainActivity : ComponentActivity() {
         var activeBackend by remember { mutableStateOf(LiteRTLMManager.activeBackend) }
         val deviceIp = remember { getLocalIpAddress() ?: "Unknown" }
         var modelPath by remember { mutableStateOf(getSavedModelPath() ?: "No model selected") }
+        
+        val prefs = remember { getSharedPreferences("gateway_prefs", MODE_PRIVATE) }
+        var maxTokens by remember { mutableStateOf(prefs.getString("max_tokens", "2048") ?: "2048") }
+        var defaultTemp by remember { mutableStateOf(prefs.getString("default_temp", "0.7") ?: "0.7") }
+        var enableThinking by remember { mutableStateOf(prefs.getBoolean("enable_thinking", false)) }
 
         val filePickerLauncher = rememberLauncherForActivityResult(
             contract = ActivityResultContracts.GetContent()
@@ -99,6 +104,30 @@ class MainActivity : ComponentActivity() {
             }
 
             Spacer(modifier = Modifier.height(16.dp))
+            
+            Text(text = "Inference Defaults:", style = MaterialTheme.typography.titleMedium)
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    value = maxTokens,
+                    onValueChange = { maxTokens = it },
+                    label = { Text("Max Tokens") },
+                    modifier = Modifier.weight(1f),
+                    singleLine = true
+                )
+                OutlinedTextField(
+                    value = defaultTemp,
+                    onValueChange = { defaultTemp = it },
+                    label = { Text("Temp") },
+                    modifier = Modifier.weight(1f),
+                    singleLine = true
+                )
+            }
+            Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                Checkbox(checked = enableThinking, onCheckedChange = { enableThinking = it })
+                Text("Enable Thinking (Prompt injection)")
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
 
             OutlinedTextField(
                 value = lokiUrl,
@@ -131,6 +160,7 @@ class MainActivity : ComponentActivity() {
                     if (isServerRunning) {
                         stopServer()
                     } else {
+                        saveInferenceDefaults(maxTokens, defaultTemp, enableThinking)
                         startServer(lokiUrl, selectedLogLevel)
                     }
                 },
@@ -139,6 +169,14 @@ class MainActivity : ComponentActivity() {
                 Text(text = if (isServerRunning) "Stop Server" else "Start Server")
             }
         }
+    }
+
+    private fun saveInferenceDefaults(maxTokens: String, temp: String, thinking: Boolean) {
+        getSharedPreferences("gateway_prefs", MODE_PRIVATE).edit()
+            .putString("max_tokens", maxTokens)
+            .putString("default_temp", temp)
+            .putBoolean("enable_thinking", thinking)
+            .apply()
     }
 
     private fun startServer(lokiUrl: String, level: LogLevel) {
