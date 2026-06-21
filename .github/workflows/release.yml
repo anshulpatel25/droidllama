@@ -1,0 +1,70 @@
+name: Create Release
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build and Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Build with Gradle
+        run: ./gradlew assembleRelease
+
+      - name: Determine Next Version
+        id: next_version
+        run: |
+          # Fetch all tags
+          git fetch --tags
+
+          # Get the latest tag that matches semver (x.y.z)
+          LATEST_TAG=$(git tag -l "[0-9]*.[0-9]*.[0-9]*" --sort=-v:refname | head -n 1)
+
+          if [ -z "$LATEST_TAG" ]; then
+            NEW_TAG="0.1.0"
+          else
+            # Split version into components
+            IFS='.' read -r MAJOR MINOR PATCH <<< "$LATEST_TAG"
+
+            # Increment patch version for automatic release
+            NEW_PATCH=$((PATCH + 1))
+            NEW_TAG="$MAJOR.$MINOR.$NEW_PATCH"
+          fi
+
+          echo "tag=$NEW_TAG" >> $GITHUB_OUTPUT
+          echo "Next version: $NEW_TAG"
+
+      - name: Create Draft Release
+        id: create_release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.next_version.outputs.tag }}
+          name: Release ${{ steps.next_version.outputs.tag }}
+          draft: true
+          prerelease: false
+          generate_release_notes: true
+          files: |
+            app/build/outputs/apk/release/*.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
