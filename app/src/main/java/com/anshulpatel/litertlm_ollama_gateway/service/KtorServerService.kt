@@ -11,6 +11,7 @@ import android.os.PowerManager
 import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
 import com.anshulpatel.litertlm_ollama_gateway.domain.model.*
+import com.anshulpatel.litertlm_ollama_gateway.inference.LiteRTLMManager
 import com.anshulpatel.litertlm_ollama_gateway.logging.LogLevel
 import com.anshulpatel.litertlm_ollama_gateway.logging.LokiLogger
 import io.ktor.serialization.kotlinx.json.*
@@ -55,6 +56,16 @@ class KtorServerService : Service() {
         
         LokiLogger.configure(lokiUrl, LogLevel.valueOf(logLevel))
         LokiLogger.log(LogLevel.INFO, "KtorServerService", "Starting server service...")
+
+        val savedModelPath = getSharedPreferences("gateway_prefs", MODE_PRIVATE).getString("model_path", null)
+        if (savedModelPath != null) {
+            LokiLogger.log(LogLevel.INFO, "KtorServerService", "Initializing LiteRT-LM with: $savedModelPath")
+            CoroutineScope(Dispatchers.IO).launch {
+                LiteRTLMManager.initialize(savedModelPath)
+            }
+        } else {
+            LokiLogger.log(LogLevel.WARN, "KtorServerService", "No model path found. Inference will fail.")
+        }
 
         startForegroundService()
         acquireWakeLock()
@@ -133,10 +144,12 @@ class KtorServerService : Service() {
                         val traceId = call.callId
                         LokiLogger.log(LogLevel.INFO, "OllamaAPI", "Generate request for model: ${request.model}", traceId)
                         
+                        val generatedText = LiteRTLMManager.generateResponse(request.prompt)
+                        
                         val response = GenerateResponse(
                             model = request.model,
-                            createdAt = "2024-05-01T12:00:00.000000Z",
-                            response = "This is a dummy response from Ollama Gateway on Android.",
+                            createdAt = java.time.Instant.now().toString(),
+                            response = generatedText,
                             done = true
                         )
                         call.respond(response)
@@ -149,16 +162,16 @@ class KtorServerService : Service() {
                         val response = ModelsResponse(
                             models = listOf(
                                 ModelInfo(
-                                    name = "llama3:latest",
-                                    model = "llama3:latest",
-                                    modifiedAt = "2024-04-20T10:30:00Z",
-                                    size = 4700000000,
-                                    digest = "c6eb396dbd5992bbe3f5cdb947e8bbc0ee413d7c17e2beaae69f5d569cf982eb",
+                                    name = "gemma:latest",
+                                    model = "gemma:latest",
+                                    modifiedAt = java.time.Instant.now().toString(),
+                                    size = 1600000000,
+                                    digest = "gemma-2b-it",
                                     details = ModelDetails(
-                                        format = "gguf",
-                                        family = "llama",
-                                        parameterSize = "8B",
-                                        quantizationLevel = "Q4_0"
+                                        format = "litertlm",
+                                        family = "gemma",
+                                        parameterSize = "2B",
+                                        quantizationLevel = "INT4"
                                     )
                                 )
                             )
@@ -172,12 +185,12 @@ class KtorServerService : Service() {
                         LokiLogger.log(LogLevel.INFO, "OllamaAPI", "Show model details for: ${request.model}", traceId)
                         
                         val response = ShowResponse(
-                            modelfile = "# Dummy Modelfile\nFROM ${request.model}",
+                            modelfile = "# LiteRT-LM Modelfile\nFROM ${request.model}",
                             details = ModelDetails(
-                                format = "gguf",
-                                family = "llama",
-                                parameterSize = "8B",
-                                quantizationLevel = "Q4_0"
+                                format = "litertlm",
+                                family = "gemma",
+                                parameterSize = "2B",
+                                quantizationLevel = "INT4"
                             )
                         )
                         call.respond(response)
@@ -188,12 +201,15 @@ class KtorServerService : Service() {
                         val traceId = call.callId
                         LokiLogger.log(LogLevel.INFO, "OllamaAPI", "Chat request for model: ${request.model}", traceId)
 
+                        val lastMessage = request.messages.lastOrNull()?.content ?: ""
+                        val generatedText = LiteRTLMManager.generateResponse(lastMessage)
+
                         val response = ChatResponse(
                             model = request.model,
-                            createdAt = "2024-05-01T12:00:00.000000Z",
+                            createdAt = java.time.Instant.now().toString(),
                             message = ChatMessage(
                                 role = "assistant",
-                                content = "This is a dummy chat response from Ollama Gateway on Android."
+                                content = generatedText
                             ),
                             done = true
                         )
@@ -229,6 +245,7 @@ class KtorServerService : Service() {
 
     override fun onDestroy() {
         LokiLogger.log(LogLevel.INFO, "KtorServerService", "Stopping server service...")
+        LiteRTLMManager.close()
         server?.stop(1000, 5000)
         wakeLock?.release()
         isRunning = false
