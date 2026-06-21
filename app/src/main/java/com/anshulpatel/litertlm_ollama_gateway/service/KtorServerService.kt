@@ -162,15 +162,15 @@ class KtorServerService : Service() {
                         val response = ModelsResponse(
                             models = listOf(
                                 ModelInfo(
-                                    name = "gemma:latest",
-                                    model = "gemma:latest",
+                                    name = "gemma4:e2b",
+                                    model = "gemma4:e2b",
                                     modifiedAt = java.time.Instant.now().toString(),
                                     size = 1600000000,
-                                    digest = "gemma-2b-it",
+                                    digest = "gemma4-e2b-it",
                                     details = ModelDetails(
                                         format = "litertlm",
-                                        family = "gemma",
-                                        parameterSize = "2B",
+                                        family = "gemma4",
+                                        parameterSize = "E2B",
                                         quantizationLevel = "INT4"
                                     )
                                 )
@@ -185,10 +185,10 @@ class KtorServerService : Service() {
                         LokiLogger.log(LogLevel.INFO, "OllamaAPI", "Show model details for: ${request.model}", traceId)
                         
                         val response = ShowResponse(
-                            modelfile = "# LiteRT-LM Modelfile\nFROM ${request.model}",
+                            modelfile = "# LiteRT-LM Modelfile\nFROM gemma2:2b",
                             details = ModelDetails(
                                 format = "litertlm",
-                                family = "gemma",
+                                family = "gemma2",
                                 parameterSize = "2B",
                                 quantizationLevel = "INT4"
                             )
