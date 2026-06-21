@@ -33,6 +33,7 @@ import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.doubleOrNull
 import kotlinx.serialization.json.intOrNull
 import org.slf4j.event.Level
+import java.io.File
 import java.util.*
 
 class KtorServerService : Service() {
@@ -218,24 +219,31 @@ class KtorServerService : Service() {
                         val traceId = call.callId
                         LokiLogger.log(LogLevel.INFO, "OllamaAPI", "List models request", traceId)
                         
-                        val response = ModelsResponse(
-                            models = listOf(
-                                ModelInfo(
-                                    name = "gemma4:e2b",
-                                    model = "gemma4:e2b",
-                                    modifiedAt = java.time.Instant.now().toString(),
-                                    size = 1600000000,
-                                    digest = "gemma4-e2b-it",
-                                    details = ModelDetails(
-                                        format = "litertlm",
-                                        family = "gemma4",
-                                        parameterSize = "E2B",
-                                        quantizationLevel = "INT4"
+                        val prefs = getSharedPreferences("gateway_prefs", MODE_PRIVATE)
+                        val modelPath = prefs.getString("model_path", null)
+                        
+                        val models = if (modelPath != null) {
+                            val file = File(modelPath)
+                            if (file.exists()) {
+                                listOf(
+                                    ModelInfo(
+                                        name = file.name,
+                                        model = file.name,
+                                        modifiedAt = java.time.Instant.ofEpochMilli(file.lastModified()).toString(),
+                                        size = file.length(),
+                                        digest = "sha256:" + file.name.hashCode().toString(),
+                                        details = ModelDetails(
+                                            format = "litertlm",
+                                            family = "gemma",
+                                            parameterSize = "2B",
+                                            quantizationLevel = "INT4"
+                                        )
                                     )
                                 )
-                            )
-                        )
-                        call.respond(response)
+                            } else emptyList()
+                        } else emptyList()
+                        
+                        call.respond(ModelsResponse(models = models))
                     }
 
                     post("/show") {
@@ -243,11 +251,15 @@ class KtorServerService : Service() {
                         val traceId = call.callId
                         LokiLogger.log(LogLevel.INFO, "OllamaAPI", "Show model details for: ${request.model}", traceId)
                         
+                        val prefs = getSharedPreferences("gateway_prefs", MODE_PRIVATE)
+                        val modelPath = prefs.getString("model_path", null)
+                        val fileName = if (modelPath != null) File(modelPath).name else request.model
+
                         val response = ShowResponse(
-                            modelfile = "# LiteRT-LM Modelfile\nFROM gemma2:2b",
+                            modelfile = "# LiteRT-LM Modelfile\nFROM $fileName",
                             details = ModelDetails(
                                 format = "litertlm",
-                                family = "gemma2",
+                                family = "gemma",
                                 parameterSize = "2B",
                                 quantizationLevel = "INT4"
                             )
