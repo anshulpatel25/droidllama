@@ -101,6 +101,11 @@ class KtorServerService : Service() {
         )
     }
 
+    private fun estimateTokens(text: String): Int {
+        // Simple heuristic: 1 token ~= 4 chars for English
+        return (text.length / 4).coerceAtLeast(1)
+    }
+
     private fun startForegroundService() {
         val notification = createNotification("Ollama Gateway is running on port $PORT")
         
@@ -172,16 +177,39 @@ class KtorServerService : Service() {
                     post("/generate") {
                         val request = call.receive<GenerateRequest>()
                         val traceId = call.callId
-                        LokiLogger.log(LogLevel.INFO, "OllamaAPI", "Generate request for model: ${request.model}", traceId)
                         
                         val options = extractInferenceOptions(request.options)
+                        
+                        // Log Request with detailed parameters
+                        LokiLogger.log(LogLevel.INFO, "OllamaAPI", 
+                            "Generate Request: model=${request.model}, prompt=\"${request.prompt}\", " +
+                            "options=[temp=${options.temperature}, topK=${options.topK}, topP=${options.topP}, " +
+                            "maxTokens=${options.maxTokens}, thinking=${options.thinking}]", 
+                            traceId)
+                        
+                        val startTime = System.currentTimeMillis()
                         val generatedText = LiteRTLMManager.generateResponse(request.prompt, options)
+                        val duration = System.currentTimeMillis() - startTime
+                        
+                        val promptTokens = estimateTokens(request.prompt)
+                        val responseTokens = estimateTokens(generatedText)
+                        val totalTokens = promptTokens + responseTokens
+                        
+                        // Log Response with token usage
+                        LokiLogger.log(LogLevel.INFO, "OllamaAPI", 
+                            "Generate Response: model=${request.model}, response=\"$generatedText\", " +
+                            "prompt_tokens=$promptTokens, response_tokens=$responseTokens, total_tokens=$totalTokens, " +
+                            "duration_ms=$duration", 
+                            traceId)
                         
                         val response = GenerateResponse(
                             model = request.model,
                             createdAt = java.time.Instant.now().toString(),
                             response = generatedText,
-                            done = true
+                            done = true,
+                            totalDuration = duration * 1_000_000,
+                            promptEvalCount = promptTokens,
+                            evalCount = responseTokens
                         )
                         call.respond(response)
                     }
@@ -230,11 +258,32 @@ class KtorServerService : Service() {
                     post("/chat") {
                         val request = call.receive<ChatRequest>()
                         val traceId = call.callId
-                        LokiLogger.log(LogLevel.INFO, "OllamaAPI", "Chat request for model: ${request.model}", traceId)
 
-                        val lastMessage = request.messages.lastOrNull()?.content ?: ""
                         val options = extractInferenceOptions(request.options)
+                        val lastMessage = request.messages.lastOrNull()?.content ?: ""
+                        
+                        // Log Chat Request
+                        LokiLogger.log(LogLevel.INFO, "OllamaAPI", 
+                            "Chat Request: model=${request.model}, last_message=\"$lastMessage\", " +
+                            "messages_count=${request.messages.size}, " +
+                            "options=[temp=${options.temperature}, topK=${options.topK}, topP=${options.topP}, " +
+                            "maxTokens=${options.maxTokens}, thinking=${options.thinking}]", 
+                            traceId)
+
+                        val startTime = System.currentTimeMillis()
                         val generatedText = LiteRTLMManager.generateResponse(lastMessage, options)
+                        val duration = System.currentTimeMillis() - startTime
+
+                        val promptTokens = estimateTokens(lastMessage)
+                        val responseTokens = estimateTokens(generatedText)
+                        val totalTokens = promptTokens + responseTokens
+
+                        // Log Chat Response
+                        LokiLogger.log(LogLevel.INFO, "OllamaAPI", 
+                            "Chat Response: model=${request.model}, message=\"$generatedText\", " +
+                            "prompt_tokens=$promptTokens, response_tokens=$responseTokens, total_tokens=$totalTokens, " +
+                            "duration_ms=$duration", 
+                            traceId)
 
                         val response = ChatResponse(
                             model = request.model,
@@ -243,7 +292,10 @@ class KtorServerService : Service() {
                                 role = "assistant",
                                 content = generatedText
                             ),
-                            done = true
+                            done = true,
+                            totalDuration = duration * 1_000_000,
+                            promptEvalCount = promptTokens,
+                            evalCount = responseTokens
                         )
                         call.respond(response)
                     }
