@@ -157,8 +157,8 @@ class KtorServerService : Service() {
                                     details = ModelDetails(
                                         format = "gguf",
                                         family = "llama",
-                                        parameter_size = "8B",
-                                        quantization_level = "Q4_0"
+                                        parameterSize = "8B",
+                                        quantizationLevel = "Q4_0"
                                     )
                                 )
                             )
@@ -176,9 +176,26 @@ class KtorServerService : Service() {
                             details = ModelDetails(
                                 format = "gguf",
                                 family = "llama",
-                                parameter_size = "8B",
-                                quantization_level = "Q4_0"
+                                parameterSize = "8B",
+                                quantizationLevel = "Q4_0"
                             )
+                        )
+                        call.respond(response)
+                    }
+
+                    post("/chat") {
+                        val request = call.receive<ChatRequest>()
+                        val traceId = call.callId
+                        LokiLogger.log(LogLevel.INFO, "OllamaAPI", "Chat request for model: ${request.model}", traceId)
+
+                        val response = ChatResponse(
+                            model = request.model,
+                            createdAt = "2024-05-01T12:00:00.000000Z",
+                            message = ChatMessage(
+                                role = "assistant",
+                                content = "This is a dummy chat response from Ollama Gateway on Android."
+                            ),
+                            done = true
                         )
                         call.respond(response)
                     }
