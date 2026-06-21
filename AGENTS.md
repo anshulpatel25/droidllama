@@ -35,7 +35,7 @@ The project follows Clean Architecture principles:
 ## Current Status
 
 - [x] Foundation: Ktor server + Foreground Service.
-- [x] Ollama API: Mock implementation of Generate, Tags, Show, and Chat.
+- [x] Ollama API: Dynamic implementation of Tags and Show based on selected model; mock implementation of Generate and Chat.
 - [x] Observability: Prometheus metrics and Loki logging.
 - [x] UI: Theme-aware management interface.
 - [x] real-llm-integration: Integrated LiteRT-LM (Gemma 2B) via file picker.
