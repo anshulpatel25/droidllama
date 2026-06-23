@@ -31,6 +31,7 @@ The project follows Clean Architecture principles:
     - Models are selected via file picker and copied to internal storage.
     - Prompt formatting uses Gemma template: `<start_of_turn>user\n{prompt}<end_of_turn>\n<start_of_turn>model\n`.
     - `LiteRTLMManager` handles singleton model lifecycle.
+    - **Tool Calling**: Externally passed `tools` (OpenAI format) are NOT supported natively. LiteRT-LM requires tools to be baked into the graph. Intermediary proxies (like Ollama or n8n) may strip these parameters.
 
 ## Current Status
 
