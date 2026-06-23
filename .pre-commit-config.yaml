@@ -1,0 +1,24 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: check-yaml
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: check-added-large-files
+
+  - repo: local
+    hooks:
+      - id: ktlint
+        name: ktlint
+        entry: ./gradlew ktlintCheck
+        language: system
+        types: [kotlin]
+        pass_filenames: false
+
+      - id: detekt
+        name: detekt
+        entry: ./gradlew detekt
+        language: system
+        types: [kotlin]
+        pass_filenames: false

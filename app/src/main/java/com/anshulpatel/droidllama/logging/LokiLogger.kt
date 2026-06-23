@@ -35,7 +35,7 @@ object LokiLogger {
         val timestamp = System.currentTimeMillis()
         val formattedDate = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.US).format(Date(timestamp))
         val logLine = "[$formattedDate] [$level] [TraceID: ${traceId ?: "N/A"}] $tag: $message"
-        
+
         // Always log to logcat
         when (level) {
             LogLevel.DEBUG -> Log.d(tag, logLine)
@@ -68,7 +68,7 @@ object LokiLogger {
     private suspend fun pushToLoki() {
         val urlStr = lokiUrl ?: return
         val entriesToPush = mutableListOf<LogEntry>()
-        
+
         // Peek and poll up to 50 entries
         while (logQueue.isNotEmpty() && entriesToPush.size < 50) {
             logQueue.poll()?.let { entriesToPush.add(it) }
@@ -94,7 +94,7 @@ object LokiLogger {
             }
 
             val payload = json.encodeToString(LokiPushRequest(streams))
-            
+
             // Ensure URL is correctly formatted
             val baseUrl = if (!urlStr.startsWith("http")) "http://$urlStr" else urlStr
             val fullUrl = try {
@@ -108,7 +108,7 @@ object LokiLogger {
                 lokiUrl = null
                 return
             }
-            
+
             withContext(Dispatchers.IO) {
                 val conn = fullUrl.openConnection() as HttpURLConnection
                 conn.requestMethod = "POST"
@@ -116,9 +116,9 @@ object LokiLogger {
                 conn.connectTimeout = 5000
                 conn.readTimeout = 5000
                 conn.doOutput = true
-                
+
                 conn.outputStream.use { it.write(payload.toByteArray()) }
-                
+
                 val responseCode = conn.responseCode
                 if (responseCode !in 200..299) {
                     Log.e("LokiLogger", "Failed to push to Loki: $responseCode")

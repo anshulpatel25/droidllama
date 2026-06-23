@@ -46,7 +46,7 @@ class MainActivity : ComponentActivity() {
         val activeBackend by DroidLlamaManager.activeBackend.collectAsState()
         val deviceIp = remember { getLocalIpAddress() ?: "Unknown" }
         var modelPath by remember { mutableStateOf(getSavedModelPath() ?: "No model selected") }
-        
+
         var isLoadingModel by remember { mutableStateOf(false) }
         var copyProgress by remember { mutableStateOf(0f) }
         val scope = rememberCoroutineScope()
@@ -94,7 +94,7 @@ class MainActivity : ComponentActivity() {
                     DroidLlamaManager.BackendType.INITIALIZING -> MaterialTheme.colorScheme.tertiary
                     else -> MaterialTheme.colorScheme.error
                 }
-                
+
                 Text(
                     text = "Inference Backend: ${activeBackend.name}",
                     color = backendColor
@@ -104,7 +104,7 @@ class MainActivity : ComponentActivity() {
                     LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(text = "Model Settings:", style = MaterialTheme.typography.titleMedium)
@@ -141,7 +141,7 @@ class MainActivity : ComponentActivity() {
             }
 
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             Text(text = "Inference Defaults:", style = MaterialTheme.typography.titleMedium)
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
@@ -208,7 +208,7 @@ class MainActivity : ComponentActivity() {
             ) {
                 Text(text = if (isServerRunning) "Stop Server" else "Start Server")
             }
-            
+
             if (!isServerRunning && !isModelSelected) {
                 Text(
                     text = "Please select a model to start the server",
@@ -273,7 +273,7 @@ class MainActivity : ComponentActivity() {
             val inputStream = contentResolver.openInputStream(uri) ?: return@withContext null
             val file = File(filesDir, fileName)
             val totalBytes = contentResolver.openAssetFileDescriptor(uri, "r")?.use { it.length } ?: -1L
-            
+
             inputStream.use { input ->
                 FileOutputStream(file).use { output ->
                     val buffer = ByteArray(64 * 1024)
