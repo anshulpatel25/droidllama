@@ -30,7 +30,8 @@ The project follows Clean Architecture principles:
 5. **LiteRT-LM Inference**:
     - Models are selected via file picker and copied to internal storage.
     - Prompt formatting uses Gemma template: `<start_of_turn>user\n{prompt}<end_of_turn>\n<start_of_turn>model\n`.
-    - `LiteRTLMManager` handles singleton model lifecycle.
+    - `LiteRTLMManager` handles singleton model lifecycle and exposes `activeBackend` as a `StateFlow` for UI observation.
+    - Model loading (copying from storage) and engine initialization are performed asynchronously to prevent UI hangs.
 
 ## Current Status
 
@@ -39,6 +40,7 @@ The project follows Clean Architecture principles:
 - [x] Observability: Prometheus metrics and Loki logging.
 - [x] UI: Theme-aware management interface.
 - [x] real-llm-integration: Integrated LiteRT-LM (Gemma 2B) via file picker.
+- [x] UX: Async model loading with progress feedback.
 
 ## How to update documentation
 

@@ -9,6 +9,8 @@ import com.google.ai.edge.litertlm.Engine
 import com.google.ai.edge.litertlm.EngineConfig
 import com.google.ai.edge.litertlm.SamplerConfig
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.withContext
 
@@ -30,13 +32,13 @@ object LiteRTLMManager {
         GPU, CPU, NONE, INITIALIZING, ERROR
     }
 
-    var activeBackend: BackendType = BackendType.NONE
-        private set
+    private val _activeBackend = MutableStateFlow(BackendType.NONE)
+    val activeBackend = _activeBackend.asStateFlow()
 
     suspend fun initialize(modelPath: String, maxTokens: Int? = 2048) = withContext(Dispatchers.IO) {
         if (currentModelPath == modelPath && engine != null) return@withContext
 
-        activeBackend = BackendType.INITIALIZING
+        _activeBackend.value = BackendType.INITIALIZING
         engine?.close()
         
         try {
@@ -51,7 +53,7 @@ object LiteRTLMManager {
             newEngine.initialize()
             engine = newEngine
             currentModelPath = modelPath
-            activeBackend = BackendType.GPU
+            _activeBackend.value = BackendType.GPU
             LokiLogger.log(LogLevel.INFO, TAG, "LiteRT-LM engine initialized with GPU.")
         } catch (e: Exception) {
             LokiLogger.log(LogLevel.WARN, TAG, "Failed to initialize GPU backend: ${e.localizedMessage}. Falling back to CPU...")
@@ -67,14 +69,14 @@ object LiteRTLMManager {
                 newEngine.initialize()
                 engine = newEngine
                 currentModelPath = modelPath
-                activeBackend = BackendType.CPU
+                _activeBackend.value = BackendType.CPU
                 LokiLogger.log(LogLevel.INFO, TAG, "LiteRT-LM engine initialized with CPU fallback.")
             } catch (e2: Exception) {
                 LokiLogger.log(LogLevel.ERROR, TAG, "CRITICAL: Failed to initialize any LiteRT-LM backend: ${e2.localizedMessage}")
                 e2.printStackTrace()
                 engine = null
                 currentModelPath = null
-                activeBackend = BackendType.ERROR
+                _activeBackend.value = BackendType.ERROR
             }
         }
     }
@@ -152,6 +154,6 @@ object LiteRTLMManager {
         engine?.close()
         engine = null
         currentModelPath = null
-        activeBackend = BackendType.NONE
+        _activeBackend.value = BackendType.NONE
     }
 }
