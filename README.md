@@ -1,4 +1,4 @@
-# LiteRT-LM Ollama Gateway for Android
+# DroidLlama for Android
 
 A high-performance, long-running REST API server for Android that implements the Ollama API specification. This gateway allows Android devices to act as local LLM providers on a network.
 
@@ -34,7 +34,7 @@ A high-performance, long-running REST API server for Android that implements the
 
 ## Known Shortcomings: Externally Passed Tools
 
-While this project provides a high-performance bridge for LiteRT models, there are specific limitations regarding the handling of externally passed tool definitions (function calling) when proxied through certain environments like n8n or OpenAI-compatible clients.
+While this project provides a high-performance bridge for DroidLlama, there are specific limitations regarding the handling of externally passed tool definitions (function calling) when proxied through certain environments like n8n or OpenAI-compatible clients.
 
 ### 1. The Intermediary Protocol Drop
 If you are connecting n8n to LiteRT-LM via the Ollama Chat Model node or the OpenAI Chat Model node (pointed to the gateway's port), n8n expects the underlying model runtime to natively accept a top-level `tools` JSON array.

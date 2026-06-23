@@ -1,4 +1,4 @@
-package com.anshulpatel.litertlm_ollama_gateway
+package com.anshulpatel.droidllama
 
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -19,6 +19,6 @@ class ExampleInstrumentedTest {
     fun useAppContext() {
         // Context of the app under test.
         val appContext = InstrumentationRegistry.getInstrumentation().targetContext
-        assertEquals("com.anshulpatel.litertlm_ollama_gateway", appContext.packageName)
+        assertEquals("com.anshulpatel.droidllama", appContext.packageName)
     }
 }

@@ -1,4 +1,4 @@
-package com.anshulpatel.litertlm_ollama_gateway.ui.theme
+package com.anshulpatel.droidllama.ui.theme
 
 import androidx.compose.ui.graphics.Color
 

@@ -1,4 +1,4 @@
-package com.anshulpatel.litertlm_ollama_gateway
+package com.anshulpatel.droidllama
 
 import android.content.Intent
 import android.net.ConnectivityManager
@@ -13,10 +13,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.anshulpatel.litertlm_ollama_gateway.inference.LiteRTLMManager
-import com.anshulpatel.litertlm_ollama_gateway.logging.LogLevel
-import com.anshulpatel.litertlm_ollama_gateway.service.KtorServerService
-import com.anshulpatel.litertlm_ollama_gateway.ui.theme.LiteRTLOllamaGatewayTheme
+import com.anshulpatel.droidllama.inference.DroidLlamaManager
+import com.anshulpatel.droidllama.logging.LogLevel
+import com.anshulpatel.droidllama.service.KtorServerService
+import com.anshulpatel.droidllama.ui.theme.DroidLlamaTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -30,7 +30,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            LiteRTLOllamaGatewayTheme {
+            DroidLlamaTheme {
                 Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                     MainScreen()
                 }
@@ -43,7 +43,7 @@ class MainActivity : ComponentActivity() {
         var lokiUrl by remember { mutableStateOf("") }
         var selectedLogLevel by remember { mutableStateOf(LogLevel.INFO) }
         var isServerRunning by remember { mutableStateOf(KtorServerService.isRunning) }
-        val activeBackend by LiteRTLMManager.activeBackend.collectAsState()
+        val activeBackend by DroidLlamaManager.activeBackend.collectAsState()
         val deviceIp = remember { getLocalIpAddress() ?: "Unknown" }
         var modelPath by remember { mutableStateOf(getSavedModelPath() ?: "No model selected") }
         
@@ -83,15 +83,15 @@ class MainActivity : ComponentActivity() {
         }
 
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(text = "Ollama Gateway", style = MaterialTheme.typography.headlineMedium)
+            Text(text = "DroidLlama", style = MaterialTheme.typography.headlineMedium)
             Spacer(modifier = Modifier.height(8.dp))
             Text(text = "Server IP: $deviceIp:${KtorServerService.PORT}")
             Text(text = "Status: ${if (isServerRunning) "Running" else "Stopped"}")
             if (isServerRunning) {
                 val backendColor = when (activeBackend) {
-                    LiteRTLMManager.BackendType.GPU -> MaterialTheme.colorScheme.primary
-                    LiteRTLMManager.BackendType.CPU -> MaterialTheme.colorScheme.secondary
-                    LiteRTLMManager.BackendType.INITIALIZING -> MaterialTheme.colorScheme.tertiary
+                    DroidLlamaManager.BackendType.GPU -> MaterialTheme.colorScheme.primary
+                    DroidLlamaManager.BackendType.CPU -> MaterialTheme.colorScheme.secondary
+                    DroidLlamaManager.BackendType.INITIALIZING -> MaterialTheme.colorScheme.tertiary
                     else -> MaterialTheme.colorScheme.error
                 }
                 
@@ -99,7 +99,7 @@ class MainActivity : ComponentActivity() {
                     text = "Inference Backend: ${activeBackend.name}",
                     color = backendColor
                 )
-                if (activeBackend == LiteRTLMManager.BackendType.INITIALIZING) {
+                if (activeBackend == DroidLlamaManager.BackendType.INITIALIZING) {
                     Spacer(modifier = Modifier.height(4.dp))
                     LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
                 }

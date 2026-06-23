@@ -1,4 +1,4 @@
-package com.anshulpatel.litertlm_ollama_gateway.domain.model
+package com.anshulpatel.droidllama.domain.model
 
 import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.SerialName

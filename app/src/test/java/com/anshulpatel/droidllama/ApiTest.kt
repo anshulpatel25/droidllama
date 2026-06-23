@@ -1,6 +1,6 @@
-package com.anshulpatel.litertlm_ollama_gateway
+package com.anshulpatel.droidllama
 
-import com.anshulpatel.litertlm_ollama_gateway.domain.model.*
+import com.anshulpatel.droidllama.domain.model.*
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.junit.Assert.assertEquals

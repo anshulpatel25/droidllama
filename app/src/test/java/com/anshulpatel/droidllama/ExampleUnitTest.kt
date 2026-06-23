@@ -1,4 +1,4 @@
-package com.anshulpatel.litertlm_ollama_gateway
+package com.anshulpatel.droidllama
 
 import org.junit.Test
 

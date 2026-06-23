@@ -22,5 +22,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "litertlm-ollama-gateway"
+rootProject.name = "droidllama"
 include(":app")

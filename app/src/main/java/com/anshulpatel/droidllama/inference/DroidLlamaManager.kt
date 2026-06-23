@@ -1,7 +1,7 @@
-package com.anshulpatel.litertlm_ollama_gateway.inference
+package com.anshulpatel.droidllama.inference
 
-import com.anshulpatel.litertlm_ollama_gateway.logging.LogLevel
-import com.anshulpatel.litertlm_ollama_gateway.logging.LokiLogger
+import com.anshulpatel.droidllama.logging.LogLevel
+import com.anshulpatel.droidllama.logging.LokiLogger
 import com.google.ai.edge.litertlm.Backend
 import com.google.ai.edge.litertlm.Content
 import com.google.ai.edge.litertlm.ConversationConfig
@@ -14,11 +14,11 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.withContext
 
-object LiteRTLMManager {
+object DroidLlamaManager {
     private var engine: Engine? = null
     private var currentModelPath: String? = null
 
-    private const val TAG = "LiteRTLMManager"
+    private const val TAG = "DroidLlamaManager"
 
     data class InferenceOptions(
         val temperature: Double? = null,

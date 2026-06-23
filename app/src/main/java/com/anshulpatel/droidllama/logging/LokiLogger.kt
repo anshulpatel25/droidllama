@@ -1,4 +1,4 @@
-package com.anshulpatel.litertlm_ollama_gateway.logging
+package com.anshulpatel.droidllama.logging
 
 import android.util.Log
 import kotlinx.coroutines.*

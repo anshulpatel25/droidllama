@@ -1,4 +1,4 @@
-package com.anshulpatel.litertlm_ollama_gateway.ui.theme
+package com.anshulpatel.droidllama.ui.theme
 
 import android.app.Activity
 import android.os.Build
@@ -38,7 +38,7 @@ private val LightColorScheme = lightColorScheme(
 )
 
 @Composable
-fun LiteRTLOllamaGatewayTheme(
+fun DroidLlamaTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     // Dynamic color is available on Android 12+
     dynamicColor: Boolean = true,

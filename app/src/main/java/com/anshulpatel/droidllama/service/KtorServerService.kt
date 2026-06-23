@@ -1,4 +1,4 @@
-package com.anshulpatel.litertlm_ollama_gateway.service
+package com.anshulpatel.droidllama.service
 
 import android.app.Notification
 import android.app.NotificationChannel
@@ -10,10 +10,10 @@ import android.os.IBinder
 import android.os.PowerManager
 import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
-import com.anshulpatel.litertlm_ollama_gateway.domain.model.*
-import com.anshulpatel.litertlm_ollama_gateway.inference.LiteRTLMManager
-import com.anshulpatel.litertlm_ollama_gateway.logging.LogLevel
-import com.anshulpatel.litertlm_ollama_gateway.logging.LokiLogger
+import com.anshulpatel.droidllama.domain.model.*
+import com.anshulpatel.droidllama.inference.DroidLlamaManager
+import com.anshulpatel.droidllama.logging.LogLevel
+import com.anshulpatel.droidllama.logging.LokiLogger
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
 import io.ktor.server.cio.*
@@ -69,7 +69,7 @@ class KtorServerService : Service() {
         if (savedModelPath != null) {
             LokiLogger.log(LogLevel.INFO, "KtorServerService", "Initializing LiteRT-LM with: $savedModelPath, context: $maxTokens")
             CoroutineScope(Dispatchers.IO).launch {
-                LiteRTLMManager.initialize(savedModelPath, maxTokens)
+                DroidLlamaManager.initialize(savedModelPath, maxTokens)
             }
         } else {
             LokiLogger.log(LogLevel.ERROR, "KtorServerService", "No model path found. LiteRT-LM will NOT be initialized.")
@@ -83,17 +83,17 @@ class KtorServerService : Service() {
         return START_STICKY
     }
 
-    private fun extractInferenceOptions(options: Map<String, JsonElement>?): LiteRTLMManager.InferenceOptions {
+    private fun extractInferenceOptions(options: Map<String, JsonElement>?): DroidLlamaManager.InferenceOptions {
         val prefs = getSharedPreferences("gateway_prefs", MODE_PRIVATE)
         val defaultThinking = prefs.getBoolean("enable_thinking", false)
         val defaultTemp = prefs.getString("default_temp", "0.7")?.toDoubleOrNull() ?: 0.7
 
-        if (options == null) return LiteRTLMManager.InferenceOptions(
+        if (options == null) return DroidLlamaManager.InferenceOptions(
             temperature = defaultTemp,
             thinking = defaultThinking
         )
 
-        return LiteRTLMManager.InferenceOptions(
+        return DroidLlamaManager.InferenceOptions(
             temperature = (options["temperature"] as? JsonPrimitive)?.doubleOrNull ?: defaultTemp,
             topK = (options["top_k"] as? JsonPrimitive)?.intOrNull,
             topP = (options["top_p"] as? JsonPrimitive)?.doubleOrNull,
@@ -189,7 +189,7 @@ class KtorServerService : Service() {
                             traceId)
                         
                         val startTime = System.currentTimeMillis()
-                        val generatedText = LiteRTLMManager.generateResponse(request.prompt, options)
+                        val generatedText = DroidLlamaManager.generateResponse(request.prompt, options)
                         val duration = System.currentTimeMillis() - startTime
                         
                         val promptTokens = estimateTokens(request.prompt)
@@ -283,7 +283,7 @@ class KtorServerService : Service() {
                             traceId)
 
                         val startTime = System.currentTimeMillis()
-                        val generatedText = LiteRTLMManager.generateResponse(lastMessage, options)
+                        val generatedText = DroidLlamaManager.generateResponse(lastMessage, options)
                         val duration = System.currentTimeMillis() - startTime
 
                         val promptTokens = estimateTokens(lastMessage)
@@ -341,7 +341,7 @@ class KtorServerService : Service() {
 
     override fun onDestroy() {
         LokiLogger.log(LogLevel.INFO, "KtorServerService", "Stopping server service...")
-        LiteRTLMManager.close()
+        DroidLlamaManager.close()
         server?.stop(1000, 5000)
         wakeLock?.release()
         isRunning = false

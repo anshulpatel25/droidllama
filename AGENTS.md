@@ -1,16 +1,16 @@
-# Agent Documentation
+# DroidLlama Agent Documentation
 
-This file provides critical context for AI agents working on the LiteRT-LM Ollama Gateway project. **Note: This file should be updated whenever a new feature is added, changed, or removed.**
+This file provides critical context for AI agents working on the DroidLlama project. **Note: This file should be updated whenever a new feature is added, changed, or removed.**
 
 ## Project Architecture
 
 The project follows Clean Architecture principles:
 
 - **`:app` Module**: The primary Android application module.
-    - `com.anshulpatel.litertlm_ollama_gateway.domain.model`: Data models for Ollama API requests and responses.
-    - `com.anshulpatel.litertlm_ollama_gateway.service`: Background logic for the Ktor server and Android Foreground Service.
-    - `com.anshulpatel.litertlm_ollama_gateway.logging`: Custom logging infrastructure (Loki integration).
-    - `com.anshulpatel.litertlm_ollama_gateway.ui`: Jetpack Compose UI and Theme.
+    - `com.anshulpatel.droidllama.domain.model`: Data models for Ollama API requests and responses.
+    - `com.anshulpatel.droidllama.service`: Background logic for the Ktor server and Android Foreground Service.
+    - `com.anshulpatel.droidllama.logging`: Custom logging infrastructure (Loki integration).
+    - `com.anshulpatel.droidllama.ui`: Jetpack Compose UI and Theme.
 
 ## Critical Conventions
 
@@ -30,7 +30,7 @@ The project follows Clean Architecture principles:
 5. **LiteRT-LM Inference**:
     - Models are selected via file picker and copied to internal storage.
     - Prompt formatting uses Gemma template: `<start_of_turn>user\n{prompt}<end_of_turn>\n<start_of_turn>model\n`.
-    - `LiteRTLMManager` handles singleton model lifecycle and exposes `activeBackend` as a `StateFlow` for UI observation.
+    - `DroidLlamaManager` handles singleton model lifecycle and exposes `activeBackend` as a `StateFlow` for UI observation.
     - **Tool Calling**: Externally passed `tools` (OpenAI format) are NOT supported natively. LiteRT-LM requires tools to be baked into the graph. Intermediary proxies (like Ollama or n8n) may strip these parameters.
     - Model loading (copying from storage) and engine initialization are performed asynchronously to prevent UI hangs.
 

@@ -6,11 +6,11 @@ plugins {
 }
 
 android {
-    namespace = "com.anshulpatel.litertlm_ollama_gateway"
+    namespace = "com.anshulpatel.droidllama"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.anshulpatel.litertlm_ollama_gateway"
+        applicationId = "com.anshulpatel.droidllama"
         minSdk = 34
         targetSdk = 36
         versionCode = 12
