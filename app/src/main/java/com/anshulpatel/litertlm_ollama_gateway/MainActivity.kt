@@ -192,6 +192,8 @@ class MainActivity : ComponentActivity() {
 
             Spacer(modifier = Modifier.height(24.dp))
 
+            val isModelSelected = modelPath != "No model selected"
+
             Button(
                 onClick = {
                     if (isServerRunning) {
@@ -202,9 +204,18 @@ class MainActivity : ComponentActivity() {
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
-                enabled = !isLoadingModel
+                enabled = !isLoadingModel && (isServerRunning || isModelSelected)
             ) {
                 Text(text = if (isServerRunning) "Stop Server" else "Start Server")
+            }
+            
+            if (!isServerRunning && !isModelSelected) {
+                Text(
+                    text = "Please select a model to start the server",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(top = 4.dp)
+                )
             }
         }
     }
