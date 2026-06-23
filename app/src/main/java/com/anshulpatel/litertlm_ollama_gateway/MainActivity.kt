@@ -17,6 +17,9 @@ import com.anshulpatel.litertlm_ollama_gateway.inference.LiteRTLMManager
 import com.anshulpatel.litertlm_ollama_gateway.logging.LogLevel
 import com.anshulpatel.litertlm_ollama_gateway.service.KtorServerService
 import com.anshulpatel.litertlm_ollama_gateway.ui.theme.LiteRTLOllamaGatewayTheme
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 import java.net.InetAddress
@@ -40,10 +43,14 @@ class MainActivity : ComponentActivity() {
         var lokiUrl by remember { mutableStateOf("") }
         var selectedLogLevel by remember { mutableStateOf(LogLevel.INFO) }
         var isServerRunning by remember { mutableStateOf(KtorServerService.isRunning) }
-        var activeBackend by remember { mutableStateOf(LiteRTLMManager.activeBackend) }
+        val activeBackend by LiteRTLMManager.activeBackend.collectAsState()
         val deviceIp = remember { getLocalIpAddress() ?: "Unknown" }
         var modelPath by remember { mutableStateOf(getSavedModelPath() ?: "No model selected") }
         
+        var isLoadingModel by remember { mutableStateOf(false) }
+        var copyProgress by remember { mutableStateOf(0f) }
+        val scope = rememberCoroutineScope()
+
         val prefs = remember { getSharedPreferences("gateway_prefs", MODE_PRIVATE) }
         var maxTokens by remember { mutableStateOf(prefs.getString("max_tokens", "2048") ?: "2048") }
         var defaultTemp by remember { mutableStateOf(prefs.getString("default_temp", "0.7") ?: "0.7") }
@@ -53,10 +60,17 @@ class MainActivity : ComponentActivity() {
             contract = ActivityResultContracts.GetContent()
         ) { uri ->
             uri?.let {
-                val path = copyFileToInternalStorage(it, "selected_model.litertlm")
-                if (path != null) {
-                    saveModelPath(path)
-                    modelPath = path
+                scope.launch {
+                    isLoadingModel = true
+                    copyProgress = 0f
+                    val path = copyFileToInternalStorage(it, "selected_model.litertlm") { progress ->
+                        copyProgress = progress
+                    }
+                    if (path != null) {
+                        saveModelPath(path)
+                        modelPath = path
+                    }
+                    isLoadingModel = false
                 }
             }
         }
@@ -64,7 +78,6 @@ class MainActivity : ComponentActivity() {
         LaunchedEffect(Unit) {
             while (true) {
                 isServerRunning = KtorServerService.isRunning
-                activeBackend = LiteRTLMManager.activeBackend
                 kotlinx.coroutines.delay(1.seconds)
             }
         }
@@ -86,6 +99,10 @@ class MainActivity : ComponentActivity() {
                     text = "Inference Backend: ${activeBackend.name}",
                     color = backendColor
                 )
+                if (activeBackend == LiteRTLMManager.BackendType.INITIALIZING) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                }
             }
             
             Spacer(modifier = Modifier.height(16.dp))
@@ -100,9 +117,27 @@ class MainActivity : ComponentActivity() {
             Text(text = "Path: $modelPath", style = MaterialTheme.typography.bodySmall)
             Button(
                 onClick = { filePickerLauncher.launch("*/*") },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !isLoadingModel
             ) {
-                Text("Select .litertlm Model")
+                if (isLoadingModel) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        strokeWidth = 2.dp
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Copying Model (${(copyProgress * 100).toInt()}%)...")
+                } else {
+                    Text("Select .litertlm Model")
+                }
+            }
+            if (isLoadingModel) {
+                Spacer(modifier = Modifier.height(4.dp))
+                LinearProgressIndicator(
+                    progress = { copyProgress },
+                    modifier = Modifier.fillMaxWidth(),
+                )
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -157,6 +192,8 @@ class MainActivity : ComponentActivity() {
 
             Spacer(modifier = Modifier.height(24.dp))
 
+            val isModelSelected = modelPath != "No model selected"
+
             Button(
                 onClick = {
                     if (isServerRunning) {
@@ -166,9 +203,19 @@ class MainActivity : ComponentActivity() {
                         startServer(lokiUrl, selectedLogLevel)
                     }
                 },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !isLoadingModel && (isServerRunning || isModelSelected)
             ) {
                 Text(text = if (isServerRunning) "Stop Server" else "Start Server")
+            }
+            
+            if (!isServerRunning && !isModelSelected) {
+                Text(
+                    text = "Please select a model to start the server",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(top = 4.dp)
+                )
             }
         }
     }
@@ -221,13 +268,24 @@ class MainActivity : ComponentActivity() {
         getSharedPreferences("gateway_prefs", MODE_PRIVATE).edit().putString("model_path", path).apply()
     }
 
-    private fun copyFileToInternalStorage(uri: android.net.Uri, fileName: String): String? {
-        return try {
-            val inputStream = contentResolver.openInputStream(uri) ?: return null
+    private suspend fun copyFileToInternalStorage(uri: android.net.Uri, fileName: String, onProgress: (Float) -> Unit): String? = withContext(Dispatchers.IO) {
+        return@withContext try {
+            val inputStream = contentResolver.openInputStream(uri) ?: return@withContext null
             val file = File(filesDir, fileName)
+            val totalBytes = contentResolver.openAssetFileDescriptor(uri, "r")?.use { it.length } ?: -1L
+            
             inputStream.use { input ->
                 FileOutputStream(file).use { output ->
-                    input.copyTo(output)
+                    val buffer = ByteArray(64 * 1024)
+                    var bytesRead: Int
+                    var totalCopied = 0L
+                    while (input.read(buffer).also { bytesRead = it } != -1) {
+                        output.write(buffer, 0, bytesRead)
+                        totalCopied += bytesRead
+                        if (totalBytes > 0) {
+                            onProgress(totalCopied.toFloat() / totalBytes)
+                        }
+                    }
                 }
             }
             file.absolutePath
