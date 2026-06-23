@@ -32,12 +32,13 @@ The project follows Clean Architecture principles:
     - Prompt formatting uses Gemma template: `<start_of_turn>user\n{prompt}<end_of_turn>\n<start_of_turn>model\n`.
     - `DroidLlamaManager` handles singleton model lifecycle and exposes `activeBackend` as a `StateFlow` for UI observation.
     - **Tool Calling**: Externally passed `tools` (OpenAI format) are NOT supported natively. LiteRT-LM requires tools to be baked into the graph. Intermediary proxies (like Ollama or n8n) may strip these parameters.
+    - **Chat History**: Persistent chat history and multi-turn conversations are NOT supported. Each request initializes a fresh LiteRT-LM session, wiping out previous context. Context window constraints and strict chat template requirements also limit multi-turn support via proxy layers.
     - Model loading (copying from storage) and engine initialization are performed asynchronously to prevent UI hangs.
 
 ## Current Status
 
 - [x] Foundation: Ktor server + Foreground Service.
-- [x] Ollama API: Dynamic implementation of Tags and Show based on selected model; mock implementation of Generate and Chat.
+- [x] Ollama API: Dynamic implementation of Tags and Show based on selected model; implementation of Generate and Chat (stateless).
 - [x] Observability: Prometheus metrics and Loki logging.
 - [x] UI: Theme-aware management interface.
 - [x] real-llm-integration: Integrated LiteRT-LM (Gemma 2B) via file picker.

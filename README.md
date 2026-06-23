@@ -32,25 +32,25 @@ A high-performance, long-running REST API server for Android that implements the
    curl http://<device-ip>:11434/api/tags
    ```
 
-## Known Shortcomings: Externally Passed Tools
+## Known Shortcomings
 
-While this project provides a high-performance bridge for DroidLlama, there are specific limitations regarding the handling of externally passed tool definitions (function calling) when proxied through certain environments like n8n or OpenAI-compatible clients.
+This project has specific limitations regarding tool calling and multi-turn conversations when used through proxy layers like n8n or standard OpenAI-compatible clients.
 
-### 1. The Intermediary Protocol Drop
-If you are connecting n8n to LiteRT-LM via the Ollama Chat Model node or the OpenAI Chat Model node (pointed to the gateway's port), n8n expects the underlying model runtime to natively accept a top-level `tools` JSON array.
+### 1. Externally Passed Tools (Function Calling)
 
-While Ollama natively supports tool parameters for its own packaged models (like Llama 3.1 or Qwen 2.5), it acts purely as a generic text/token bypass when you proxy an external backend like LiteRT-LM through it. Consequently, Ollama may strip out the `tools` parameters because it does not recognize the custom LiteRT-LM backend as a native tool-calling engine, resulting in only raw text being transmitted.
+There are specific limitations regarding the handling of externally passed tool definitions when proxied through certain environments.
 
-### 2. Native Format Mismatches
-*   **n8n/Standard Format:** Sends standard OpenAI-compatible JSON schemas (`{"type": "function", "function": {...}}`).
-*   **LiteRT-LM Format:** Requires specific platform-level compilation (e.g., Python `@register_tool` or Kotlin `@Tool` annotations) baked into its specific `.litertlm` execution graph.
+*   **The Intermediary Protocol Drop**: If you are connecting n8n to LiteRT-LM via the Ollama Chat Model node or the OpenAI Chat Model node, n8n expects the underlying model runtime to natively accept a top-level `tools` JSON array. Ollama may strip out these parameters because it does not recognize the custom LiteRT-LM backend as a native tool-calling engine.
+*   **Native Format Mismatches**: Standard OpenAI-compatible JSON schemas differ from LiteRT-LM's requirement for platform-level compilation (e.g., Kotlin `@Tool` annotations) baked into the `.litertlm` execution graph.
+*   **Execution Model**: LiteRT-LM is an on-device framework. Tools must reside on the native system hosting the model binary, and the execution loop expects to intercept function calls at the hardware/binary boundary.
 
-LiteRT-LM does not dynamically parse standard raw OpenAI tools JSON arrays out-of-the-box unless wrapped in a dedicated API server logic that specifically maps those parameters back to the graph's internal expectations.
+### 2. Multi-turn Conversations and Chat History
 
-### 3. Client-Side vs. Server-Side Execution Model
-LiteRT-LM is an on-device client framework rather than a typical cloud-style API.
-*   **Cloud Models:** The server reads the tools, asks the model to output JSON, and sends that JSON back to the client to execute.
-*   **LiteRT-LM:** The tools must reside on the native system hosting the LiteRT model binary. The LiteRT execution loop expects to intercept the function call internally at the hardware/binary boundary, rather than receiving abstract instructions via a networked OpenAI-compatible proxy layer.
+Currently, this gateway **does not support persistent chat history or multi-turn conversations**. Each request is treated as a fresh, isolated inference call. This is due to several architectural factors:
+
+*   **Stateless Inference**: LiteRT-LM is designed for on-device app development where a persistent `Conversation` object is maintained in local memory. Our current Ktor/Ollama proxy layer initializes a brand-new LiteRT-LM inference session for every HTTP POST request, wiping out any context from previous turns.
+*   **Context Window Constraints**: LiteRT-LM models (like Gemma 2B) are optimized for mobile and have strict, smaller context window ceilings. Passing a full history array may easily overflow these limits, causing the model to throw memory errors or drop tokens.
+*   **Chat Template Formatting**: LiteRT-LM requires strict formatting tags (e.g., `<start_of_turn>user`, `<start_of_turn>model`) to distinguish between roles. If a proxy passes an array of messages without explicit formatting into the specific special tokens expected by the `.litertlm` file, the model will fail to understand the conversation structure.
 
 ## License
 MIT
