@@ -46,7 +46,7 @@ class KtorServerService : Service() {
         const val CHANNEL_ID = "ktor_server_channel"
         const val NOTIFICATION_ID = 1
         const val PORT = 11434
-        
+
         var isRunning = false
             private set
     }
@@ -59,13 +59,13 @@ class KtorServerService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val lokiUrl = intent?.getStringExtra("LOKI_URL")
         val logLevel = intent?.getStringExtra("LOG_LEVEL") ?: "INFO"
-        
+
         LokiLogger.configure(lokiUrl, LogLevel.valueOf(logLevel))
         LokiLogger.log(LogLevel.INFO, "KtorServerService", "Starting server service...")
 
         val savedModelPath = getSharedPreferences("gateway_prefs", MODE_PRIVATE).getString("model_path", null)
         val maxTokens = getSharedPreferences("gateway_prefs", MODE_PRIVATE).getString("max_tokens", "2048")?.toIntOrNull() ?: 2048
-        
+
         if (savedModelPath != null) {
             LokiLogger.log(LogLevel.INFO, "KtorServerService", "Initializing LiteRT-LM with: $savedModelPath, context: $maxTokens")
             CoroutineScope(Dispatchers.IO).launch {
@@ -78,7 +78,7 @@ class KtorServerService : Service() {
         startForegroundService()
         acquireWakeLock()
         startKtorServer()
-        
+
         isRunning = true
         return START_STICKY
     }
@@ -109,7 +109,7 @@ class KtorServerService : Service() {
 
     private fun startForegroundService() {
         val notification = createNotification("Ollama Gateway is running on port $PORT")
-        
+
         ServiceCompat.startForeground(
             this,
             NOTIFICATION_ID,
@@ -147,9 +147,9 @@ class KtorServerService : Service() {
                 callIdMdc("traceId")
                 logger = org.slf4j.LoggerFactory.getLogger("KtorServer")
             }
-            
+
             // Manual metrics implementation to avoid JMX crash on Android
-            
+
             intercept(ApplicationCallPipeline.Monitoring) {
                 try {
                     proceed()
@@ -157,9 +157,9 @@ class KtorServerService : Service() {
                     val method = call.request.httpMethod.value
                     val path = call.request.path()
                     val status = call.response.status()?.value?.toString() ?: "500"
-                    prometheusRegistry.counter("http_requests_per_route", 
-                        "method", method, 
-                        "path", path, 
+                    prometheusRegistry.counter("http_requests_per_route",
+                        "method", method,
+                        "path", path,
                         "status", status
                     ).increment()
                 }
@@ -178,31 +178,31 @@ class KtorServerService : Service() {
                     post("/generate") {
                         val request = call.receive<GenerateRequest>()
                         val traceId = call.callId
-                        
+
                         val options = extractInferenceOptions(request.options)
-                        
+
                         // Log Request with detailed parameters
-                        LokiLogger.log(LogLevel.INFO, "OllamaAPI", 
+                        LokiLogger.log(LogLevel.INFO, "OllamaAPI",
                             "Generate Request: model=${request.model}, prompt=\"${request.prompt}\", " +
                             "options=[temp=${options.temperature}, topK=${options.topK}, topP=${options.topP}, " +
-                            "maxTokens=${options.maxTokens}, thinking=${options.thinking}]", 
+                            "maxTokens=${options.maxTokens}, thinking=${options.thinking}]",
                             traceId)
-                        
+
                         val startTime = System.currentTimeMillis()
                         val generatedText = DroidLlamaManager.generateResponse(request.prompt, options)
                         val duration = System.currentTimeMillis() - startTime
-                        
+
                         val promptTokens = estimateTokens(request.prompt)
                         val responseTokens = estimateTokens(generatedText)
                         val totalTokens = promptTokens + responseTokens
-                        
+
                         // Log Response with token usage
-                        LokiLogger.log(LogLevel.INFO, "OllamaAPI", 
+                        LokiLogger.log(LogLevel.INFO, "OllamaAPI",
                             "Generate Response: model=${request.model}, response=\"$generatedText\", " +
                             "prompt_tokens=$promptTokens, response_tokens=$responseTokens, total_tokens=$totalTokens, " +
-                            "duration_ms=$duration", 
+                            "duration_ms=$duration",
                             traceId)
-                        
+
                         val response = GenerateResponse(
                             model = request.model,
                             createdAt = java.time.Instant.now().toString(),
@@ -218,10 +218,10 @@ class KtorServerService : Service() {
                     get("/tags") {
                         val traceId = call.callId
                         LokiLogger.log(LogLevel.INFO, "OllamaAPI", "List models request", traceId)
-                        
+
                         val prefs = getSharedPreferences("gateway_prefs", MODE_PRIVATE)
                         val modelPath = prefs.getString("model_path", null)
-                        
+
                         val models = if (modelPath != null) {
                             val file = File(modelPath)
                             if (file.exists()) {
@@ -242,7 +242,7 @@ class KtorServerService : Service() {
                                 )
                             } else emptyList()
                         } else emptyList()
-                        
+
                         call.respond(ModelsResponse(models = models))
                     }
 
@@ -250,7 +250,7 @@ class KtorServerService : Service() {
                         val request = call.receive<ShowRequest>()
                         val traceId = call.callId
                         LokiLogger.log(LogLevel.INFO, "OllamaAPI", "Show model details for: ${request.model}", traceId)
-                        
+
                         val prefs = getSharedPreferences("gateway_prefs", MODE_PRIVATE)
                         val modelPath = prefs.getString("model_path", null)
                         val fileName = if (modelPath != null) File(modelPath).name else request.model
@@ -273,13 +273,13 @@ class KtorServerService : Service() {
 
                         val options = extractInferenceOptions(request.options)
                         val lastMessage = request.messages.lastOrNull()?.content ?: ""
-                        
+
                         // Log Chat Request
-                        LokiLogger.log(LogLevel.INFO, "OllamaAPI", 
+                        LokiLogger.log(LogLevel.INFO, "OllamaAPI",
                             "Chat Request: model=${request.model}, last_message=\"$lastMessage\", " +
                             "messages_count=${request.messages.size}, " +
                             "options=[temp=${options.temperature}, topK=${options.topK}, topP=${options.topP}, " +
-                            "maxTokens=${options.maxTokens}, thinking=${options.thinking}]", 
+                            "maxTokens=${options.maxTokens}, thinking=${options.thinking}]",
                             traceId)
 
                         val startTime = System.currentTimeMillis()
@@ -291,10 +291,10 @@ class KtorServerService : Service() {
                         val totalTokens = promptTokens + responseTokens
 
                         // Log Chat Response
-                        LokiLogger.log(LogLevel.INFO, "OllamaAPI", 
+                        LokiLogger.log(LogLevel.INFO, "OllamaAPI",
                             "Chat Response: model=${request.model}, message=\"$generatedText\", " +
                             "prompt_tokens=$promptTokens, response_tokens=$responseTokens, total_tokens=$totalTokens, " +
-                            "duration_ms=$duration", 
+                            "duration_ms=$duration",
                             traceId)
 
                         val response = ChatResponse(

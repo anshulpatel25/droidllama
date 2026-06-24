@@ -40,7 +40,7 @@ object DroidLlamaManager {
 
         _activeBackend.value = BackendType.INITIALIZING
         engine?.close()
-        
+
         try {
             // Try GPU first
             LokiLogger.log(LogLevel.INFO, TAG, "Initializing LiteRT-LM engine with GPU backend...")
@@ -83,14 +83,14 @@ object DroidLlamaManager {
 
     suspend fun generateResponse(prompt: String, options: InferenceOptions = InferenceOptions()): String = withContext(Dispatchers.Default) {
         val currentEngine = engine ?: return@withContext "Engine not initialized"
-        
+
         // Gemma prompt template
         val formattedPrompt = if (options.thinking) {
             "<start_of_turn>user\nThink carefully and then answer: $prompt<end_of_turn>\n<start_of_turn>model\n<thought>\n"
         } else {
             "<start_of_turn>user\n$prompt<end_of_turn>\n<start_of_turn>model\n"
         }
-        
+
         val samplerConfig = if (options.temperature != null || options.topK != null || options.topP != null) {
             SamplerConfig(
                 topK = options.topK ?: 40,
@@ -124,7 +124,7 @@ object DroidLlamaManager {
         } else {
             "<start_of_turn>user\n$prompt<end_of_turn>\n<start_of_turn>model\n"
         }
-        
+
         val samplerConfig = if (options.temperature != null || options.topK != null || options.topP != null) {
             SamplerConfig(
                 topK = options.topK ?: 40,
@@ -134,7 +134,7 @@ object DroidLlamaManager {
         } else null
 
         val convConfig = ConversationConfig(samplerConfig = samplerConfig)
-        
+
         try {
             currentEngine.createConversation(convConfig).use { conversation ->
                 conversation.sendMessageAsync(formattedPrompt).collect { message ->

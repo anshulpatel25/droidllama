@@ -1,0 +1,69 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>CyclomaticComplexMethod:MainActivity.kt$MainActivity$@Composable fun MainScreen()</ID>
+    <ID>FunctionNaming:MainActivity.kt$MainActivity$@Composable fun MainScreen()</ID>
+    <ID>FunctionNaming:Theme.kt$@Composable fun DroidLlamaTheme( darkTheme: Boolean = isSystemInDarkTheme(), // Dynamic color is available on Android 12+ dynamicColor: Boolean = true, content: @Composable () -&gt; Unit )</ID>
+    <ID>LongMethod:KtorServerService.kt$KtorServerService$private fun startKtorServer()</ID>
+    <ID>LongMethod:MainActivity.kt$MainActivity$@Composable fun MainScreen()</ID>
+    <ID>MagicNumber:Color.kt$0xFF625b71</ID>
+    <ID>MagicNumber:Color.kt$0xFF6650a4</ID>
+    <ID>MagicNumber:Color.kt$0xFF7D5260</ID>
+    <ID>MagicNumber:Color.kt$0xFFCCC2DC</ID>
+    <ID>MagicNumber:Color.kt$0xFFD0BCFF</ID>
+    <ID>MagicNumber:Color.kt$0xFFEFB8C8</ID>
+    <ID>MagicNumber:KtorServerService.kt$KtorServerService$0.7</ID>
+    <ID>MagicNumber:KtorServerService.kt$KtorServerService$1000</ID>
+    <ID>MagicNumber:KtorServerService.kt$KtorServerService$2048</ID>
+    <ID>MagicNumber:KtorServerService.kt$KtorServerService$4</ID>
+    <ID>MagicNumber:KtorServerService.kt$KtorServerService$5000</ID>
+    <ID>MagicNumber:LokiLogger.kt$LokiLogger$100</ID>
+    <ID>MagicNumber:LokiLogger.kt$LokiLogger$1000</ID>
+    <ID>MagicNumber:LokiLogger.kt$LokiLogger$1_000_000</ID>
+    <ID>MagicNumber:LokiLogger.kt$LokiLogger$200</ID>
+    <ID>MagicNumber:LokiLogger.kt$LokiLogger$299</ID>
+    <ID>MagicNumber:LokiLogger.kt$LokiLogger$50</ID>
+    <ID>MagicNumber:LokiLogger.kt$LokiLogger$5000</ID>
+    <ID>MagicNumber:MainActivity.kt$MainActivity$100</ID>
+    <ID>MagicNumber:MainActivity.kt$MainActivity$1024</ID>
+    <ID>MagicNumber:MainActivity.kt$MainActivity$64</ID>
+    <ID>MaxLineLength:DroidLlamaManager.kt$DroidLlamaManager$"&lt;start_of_turn&gt;user\nThink carefully and then answer: $prompt&lt;end_of_turn&gt;\n&lt;start_of_turn&gt;model\n&lt;thought&gt;\n"</ID>
+    <ID>MaxLineLength:DroidLlamaManager.kt$DroidLlamaManager$LokiLogger.log(LogLevel.ERROR, TAG, "CRITICAL: Failed to initialize any LiteRT-LM backend: ${e2.localizedMessage}")</ID>
+    <ID>MaxLineLength:DroidLlamaManager.kt$DroidLlamaManager$LokiLogger.log(LogLevel.WARN, TAG, "Failed to initialize GPU backend: ${e.localizedMessage}. Falling back to CPU...")</ID>
+    <ID>MaxLineLength:DroidLlamaManager.kt$DroidLlamaManager$suspend</ID>
+    <ID>MaxLineLength:KtorServerService.kt$KtorServerService$"prompt_tokens=$promptTokens, response_tokens=$responseTokens, total_tokens=$totalTokens, "</ID>
+    <ID>MaxLineLength:KtorServerService.kt$KtorServerService$LokiLogger.log(LogLevel.ERROR, "KtorServerService", "No model path found. LiteRT-LM will NOT be initialized.")</ID>
+    <ID>MaxLineLength:KtorServerService.kt$KtorServerService$LokiLogger.log(LogLevel.INFO, "KtorServerService", "Initializing LiteRT-LM with: $savedModelPath, context: $maxTokens")</ID>
+    <ID>MaxLineLength:KtorServerService.kt$KtorServerService$val maxTokens = getSharedPreferences("gateway_prefs", MODE_PRIVATE).getString("max_tokens", "2048")?.toIntOrNull() ?: 2048</ID>
+    <ID>MaxLineLength:MainActivity.kt$MainActivity$if</ID>
+    <ID>MaxLineLength:MainActivity.kt$MainActivity$private suspend</ID>
+    <ID>MaxLineLength:MainActivity.kt$MainActivity$text = "Note: This gateway currently only supports Gemma 4 E2B (4-bit). Please select a compatible .litertlm model file."</ID>
+    <ID>NestedBlockDepth:MainActivity.kt$MainActivity$private fun getLocalIpAddress(): String?</ID>
+    <ID>PrintStackTrace:MainActivity.kt$MainActivity$e</ID>
+    <ID>ReturnCount:LokiLogger.kt$LokiLogger$private suspend fun pushToLoki()</ID>
+    <ID>TooGenericExceptionCaught:DroidLlamaManager.kt$DroidLlamaManager$e2: Exception</ID>
+    <ID>TooGenericExceptionCaught:DroidLlamaManager.kt$DroidLlamaManager$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:LokiLogger.kt$LokiLogger$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:MainActivity.kt$MainActivity$e: Exception</ID>
+    <ID>TooManyFunctions:KtorServerService.kt$KtorServerService : Service</ID>
+    <ID>WildcardImport:ApiTest.kt$import com.anshulpatel.droidllama.domain.model.*</ID>
+    <ID>WildcardImport:ExampleUnitTest.kt$import org.junit.Assert.*</ID>
+    <ID>WildcardImport:KtorServerService.kt$import com.anshulpatel.droidllama.domain.model.*</ID>
+    <ID>WildcardImport:KtorServerService.kt$import io.ktor.serialization.kotlinx.json.*</ID>
+    <ID>WildcardImport:KtorServerService.kt$import io.ktor.server.application.*</ID>
+    <ID>WildcardImport:KtorServerService.kt$import io.ktor.server.cio.*</ID>
+    <ID>WildcardImport:KtorServerService.kt$import io.ktor.server.engine.*</ID>
+    <ID>WildcardImport:KtorServerService.kt$import io.ktor.server.plugins.callid.*</ID>
+    <ID>WildcardImport:KtorServerService.kt$import io.ktor.server.plugins.calllogging.*</ID>
+    <ID>WildcardImport:KtorServerService.kt$import io.ktor.server.plugins.contentnegotiation.*</ID>
+    <ID>WildcardImport:KtorServerService.kt$import io.ktor.server.request.*</ID>
+    <ID>WildcardImport:KtorServerService.kt$import io.ktor.server.response.*</ID>
+    <ID>WildcardImport:KtorServerService.kt$import io.ktor.server.routing.*</ID>
+    <ID>WildcardImport:KtorServerService.kt$import kotlinx.coroutines.*</ID>
+    <ID>WildcardImport:LokiLogger.kt$import kotlinx.coroutines.*</ID>
+    <ID>WildcardImport:MainActivity.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:MainActivity.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:MainActivity.kt$import androidx.compose.runtime.*</ID>
+  </CurrentIssues>
+</SmellBaseline>
