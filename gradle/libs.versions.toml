@@ -14,7 +14,7 @@ activityCompose = "1.8.2"
 kotlinxSerialization = "1.6.3"
 composeBom = "2024.02.01"
 litertlm = "0.14.0"
-ktlint = "12.1.2"
+ktlint = "14.2.0"
 detekt = "1.23.8"
 
 [libraries]
