@@ -76,7 +76,7 @@ dependencies {
     implementation("io.ktor:ktor-server-metrics-micrometer-jvm:3.5.1")
 
     // Micrometer Prometheus
-    implementation("io.micrometer:micrometer-registry-prometheus:1.13.0")
+    implementation("io.micrometer:micrometer-registry-prometheus:1.17.0")
 
     // Serialization
     implementation(libs.kotlinx.serialization.json)
