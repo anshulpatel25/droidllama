@@ -67,13 +67,13 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.compose)
 
     // Ktor Server
-    implementation("io.ktor:ktor-server-core-jvm:3.5.1")
-    implementation("io.ktor:ktor-server-cio-jvm:3.5.1")
-    implementation("io.ktor:ktor-server-content-negotiation-jvm:3.5.1")
-    implementation("io.ktor:ktor-serialization-kotlinx-json-jvm:3.5.1")
-    implementation("io.ktor:ktor-server-call-logging-jvm:3.5.1")
-    implementation("io.ktor:ktor-server-call-id-jvm:3.5.1")
-    implementation("io.ktor:ktor-server-metrics-micrometer-jvm:3.5.1")
+    implementation("io.ktor:ktor-server-core-jvm:3.5.2")
+    implementation("io.ktor:ktor-server-cio-jvm:3.5.2")
+    implementation("io.ktor:ktor-server-content-negotiation-jvm:3.5.2")
+    implementation("io.ktor:ktor-serialization-kotlinx-json-jvm:3.5.2")
+    implementation("io.ktor:ktor-server-call-logging-jvm:3.5.2")
+    implementation("io.ktor:ktor-server-call-id-jvm:3.5.2")
+    implementation("io.ktor:ktor-server-metrics-micrometer-jvm:3.5.2")
 
     // Micrometer Prometheus
     implementation("io.micrometer:micrometer-registry-prometheus:1.17.0")
