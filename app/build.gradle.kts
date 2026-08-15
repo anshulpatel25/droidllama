@@ -25,7 +25,7 @@ detekt {
 
 android {
     namespace = "com.anshulpatel.droidllama"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.anshulpatel.droidllama"
