@@ -31,8 +31,8 @@ android {
         applicationId = "com.anshulpatel.droidllama"
         minSdk = 34
         targetSdk = 36
-        versionCode = 125
-        versionName = "0.1.4"
+        versionCode = 128
+        versionName = "0.1.5"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
