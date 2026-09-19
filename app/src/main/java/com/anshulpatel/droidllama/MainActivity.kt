@@ -1,23 +1,51 @@
 package com.anshulpatel.droidllama
 
 import android.content.Intent
-import android.net.ConnectivityManager
-import android.net.NetworkCapabilities
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.anshulpatel.droidllama.inference.DroidLlamaManager
 import com.anshulpatel.droidllama.logging.LogLevel
 import com.anshulpatel.droidllama.service.KtorServerService
 import com.anshulpatel.droidllama.ui.theme.DroidLlamaTheme
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -31,13 +59,17 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             DroidLlamaTheme {
-                Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
                     MainScreen()
                 }
             }
         }
     }
 
+    @OptIn(ExperimentalLayoutApi::class)
     @Composable
     fun MainScreen() {
         var lokiUrl by remember { mutableStateOf("") }
@@ -78,7 +110,7 @@ class MainActivity : ComponentActivity() {
         LaunchedEffect(Unit) {
             while (true) {
                 isServerRunning = KtorServerService.isRunning
-                kotlinx.coroutines.delay(1.seconds)
+                delay(1.seconds)
             }
         }
 
@@ -109,7 +141,8 @@ class MainActivity : ComponentActivity() {
 
             Text(text = "Model Settings:", style = MaterialTheme.typography.titleMedium)
             Text(
-                text = "Note: This gateway currently only supports Gemma 4 E2B (4-bit). Please select a compatible .litertlm model file.",
+                text = "Note: This gateway currently only supports Gemma 4 E2B (4-bit)." +
+                    " Please select a compatible .litertlm model file.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(vertical = 4.dp)
@@ -159,7 +192,7 @@ class MainActivity : ComponentActivity() {
                     singleLine = true
                 )
             }
-            Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 Checkbox(checked = enableThinking, onCheckedChange = { enableThinking = it })
                 Text("Enable Thinking (Prompt injection)")
             }
@@ -178,14 +211,31 @@ class MainActivity : ComponentActivity() {
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(text = "Log Level:")
-            Row {
+            Spacer(modifier = Modifier.height(4.dp))
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
                 LogLevel.entries.forEach { level ->
-                    Row(modifier = Modifier.padding(end = 8.dp)) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .selectable(
+                                selected = selectedLogLevel == level,
+                                onClick = { selectedLogLevel = level },
+                                role = Role.RadioButton
+                            )
+                            .padding(end = 4.dp)
+                    ) {
                         RadioButton(
                             selected = selectedLogLevel == level,
-                            onClick = { selectedLogLevel = level }
+                            onClick = null
                         )
-                        Text(text = level.name, modifier = Modifier.padding(start = 4.dp))
+                        Text(
+                            text = level.name,
+                            modifier = Modifier.padding(start = 2.dp)
+                        )
                     }
                 }
             }
@@ -249,7 +299,10 @@ class MainActivity : ComponentActivity() {
                 val addresses = networkInterface.inetAddresses
                 while (addresses.hasMoreElements()) {
                     val address = addresses.nextElement()
-                    if (!address.isLoopbackAddress && address is InetAddress && address.hostAddress?.contains(':') == false) {
+                    if (!address.isLoopbackAddress &&
+                        address is InetAddress &&
+                        address.hostAddress?.contains(':') == false
+                    ) {
                         return address.hostAddress
                     }
                 }
@@ -268,7 +321,11 @@ class MainActivity : ComponentActivity() {
         getSharedPreferences("gateway_prefs", MODE_PRIVATE).edit().putString("model_path", path).apply()
     }
 
-    private suspend fun copyFileToInternalStorage(uri: android.net.Uri, fileName: String, onProgress: (Float) -> Unit): String? = withContext(Dispatchers.IO) {
+    private suspend fun copyFileToInternalStorage(
+        uri: android.net.Uri,
+        fileName: String,
+        onProgress: (Float) -> Unit
+    ): String? = withContext(Dispatchers.IO) {
         return@withContext try {
             val inputStream = contentResolver.openInputStream(uri) ?: return@withContext null
             val file = File(filesDir, fileName)
