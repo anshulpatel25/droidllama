@@ -91,5 +91,5 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
 
     // Firebase
-    implementation(platform("com.google.firebase:firebase-bom:35.0.2"))
+    implementation(platform("com.google.firebase:firebase-bom:35.1.0"))
 }
