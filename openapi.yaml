@@ -1,0 +1,595 @@
+# OpenAPI 3.0 Specification for DroidLlama for Android (Ollama API Gateway)
+# This specification describes the REST API endpoints exposed by DroidLlama.
+
+openapi: 3.0.3
+info:
+  title: DroidLlama Ollama API Gateway
+  description: |
+    A high-performance REST API server for Android that implements the Ollama API specification.
+    This gateway enables Android devices to serve local LLM inference via LiteRT-LM.
+  version: 0.1.0
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  contact:
+    name: DroidLlama Maintainers
+
+servers:
+  - url: http://127.0.0.1:11434
+    description: Local DroidLlama server
+  - url: http://{device_ip}:11434
+    description: Network DroidLlama server
+    variables:
+      device_ip:
+        default: 192.168.1.100
+        description: IP address of the Android device running DroidLlama
+
+# Server endpoints do not require authentication by default
+security: []
+
+# Explicit list of tags used in the API spec for organization
+tags:
+  - name: System & Monitoring
+    description: Endpoints for server health check and Prometheus performance metrics.
+  - name: Models
+    description: Endpoints for inspecting and listing available local models.
+  - name: Completion & Chat
+    description: Endpoints for text generation and chat message completions.
+
+paths:
+  # ==========================================
+  # Health Check Endpoint
+  # ==========================================
+  /health:
+    get:
+      tags:
+        - System & Monitoring
+      summary: Health check
+      description: Returns the operational status of the gateway server.
+      operationId: getHealth
+      responses:
+        '200':
+          description: Server is running and healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "up"
+                required:
+                  - status
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ==========================================
+  # Prometheus Metrics Endpoint
+  # ==========================================
+  /metrics:
+    get:
+      tags:
+        - System & Monitoring
+      summary: Prometheus metrics
+      description: Returns real-time server metrics formatted for Prometheus scraping.
+      operationId: getMetrics
+      responses:
+        '200':
+          description: Prometheus formatted metrics text.
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: |
+                  # HELP http_requests_per_route_total
+                  # TYPE http_requests_per_route_total counter
+                  http_requests_per_route_total{method="GET",path="/health",status="200",} 1.0
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ==========================================
+  # Ollama API: List Models Endpoint
+  # ==========================================
+  /api/tags:
+    get:
+      tags:
+        - Models
+      summary: List local models
+      description: Returns a list of models loaded or available locally on the Android device.
+      operationId: listModels
+      responses:
+        '200':
+          description: List of available models.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelsResponse'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ==========================================
+  # Ollama API: Show Model Details Endpoint
+  # ==========================================
+  /api/show:
+    post:
+      tags:
+        - Models
+      summary: Show model details
+      description: Shows information about a specific model, including its details and modelfile.
+      operationId: showModel
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ShowRequest'
+      responses:
+        '200':
+          description: Model information response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShowResponse'
+        '400':
+          description: Bad or malformed request payload.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ==========================================
+  # Ollama API: Generate Completion Endpoint
+  # ==========================================
+  /api/generate:
+    post:
+      tags:
+        - Completion & Chat
+      summary: Generate text completion
+      description: Generates a response for a given prompt using the specified model.
+      operationId: generateCompletion
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerateRequest'
+      responses:
+        '200':
+          description: Text generation response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenerateResponse'
+        '400':
+          description: Bad or malformed request payload.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ==========================================
+  # Ollama API: Chat Completion Endpoint
+  # ==========================================
+  /api/chat:
+    post:
+      tags:
+        - Completion & Chat
+      summary: Generate chat completion
+      description: Generates the next response message given a list of chat messages.
+      operationId: generateChat
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChatRequest'
+      responses:
+        '200':
+          description: Chat completion response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatResponse'
+        '400':
+          description: Bad or malformed request payload.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+# ==========================================
+# Component Schemas
+# ==========================================
+components:
+  schemas:
+    # Generic Error Response
+    ErrorResponse:
+      type: object
+      description: Standard error response payload.
+      properties:
+        error:
+          type: string
+          description: Error message details.
+          example: "Model not found"
+      required:
+        - error
+
+    # Model details breakdown
+    ModelDetails:
+      type: object
+      description: Detailed attributes of a model architecture and format.
+      properties:
+        parent_model:
+          type: string
+          description: Parent model identifier if derived.
+          example: ""
+        format:
+          type: string
+          description: Model file format (e.g. litertlm, gguf).
+          example: "litertlm"
+        family:
+          type: string
+          description: Model family architecture.
+          example: "gemma"
+        families:
+          type: array
+          description: List of model families if multi-family.
+          items:
+            type: string
+          nullable: true
+        parameter_size:
+          type: string
+          description: Size of the model in parameters.
+          example: "2B"
+        quantization_level:
+          type: string
+          description: Quantization level applied to the model.
+          example: "INT4"
+      required:
+        - format
+        - family
+        - parameter_size
+        - quantization_level
+
+    # Model summary item
+    ModelInfo:
+      type: object
+      description: Summary info of a model available on the gateway.
+      properties:
+        name:
+          type: string
+          description: Name of the model file or model identifier.
+          example: "gemma-2b-it.litertlm"
+        model:
+          type: string
+          description: Model identifier.
+          example: "gemma-2b-it.litertlm"
+        modified_at:
+          type: string
+          format: date-time
+          description: ISO timestamp when the model was last modified.
+          example: "2024-05-01T12:00:00Z"
+        size:
+          type: integer
+          format: int64
+          description: Size of the model in bytes.
+          example: 1500000000
+        digest:
+          type: string
+          description: Digest/hash of the model file.
+          example: "sha256:1234567890abcdef"
+        details:
+          $ref: '#/components/schemas/ModelDetails'
+      required:
+        - name
+        - model
+        - modified_at
+        - size
+        - digest
+        - details
+
+    # Response for /api/tags
+    ModelsResponse:
+      type: object
+      description: Response payload listing all available models.
+      properties:
+        models:
+          type: array
+          items:
+            $ref: '#/components/schemas/ModelInfo'
+      required:
+        - models
+
+    # Request for /api/show
+    ShowRequest:
+      type: object
+      description: Request payload for fetching detailed model parameters and modelfile.
+      properties:
+        model:
+          type: string
+          description: Name of the model to inspect.
+          example: "gemma-2b-it.litertlm"
+        verbose:
+          type: boolean
+          default: false
+          description: Whether to return verbose information.
+      required:
+        - model
+
+    # Response for /api/show
+    ShowResponse:
+      type: object
+      description: Response payload containing model details and Modelfile content.
+      properties:
+        modelfile:
+          type: string
+          description: Contents of the Modelfile.
+          example: "# LiteRT-LM Modelfile\nFROM gemma-2b-it.litertlm"
+        parameters:
+          type: string
+          nullable: true
+          description: Model parameter configuration.
+        template:
+          type: string
+          nullable: true
+          description: Prompt template defined for the model.
+        details:
+          $ref: '#/components/schemas/ModelDetails'
+      required:
+        - modelfile
+        - details
+
+    # Inference hyperparameter options
+    InferenceOptions:
+      type: object
+      description: Runtime inference parameters overriding server defaults.
+      properties:
+        temperature:
+          type: number
+          format: double
+          description: Sampling temperature (0.0 to 1.0).
+          example: 0.7
+        top_k:
+          type: integer
+          description: Top-K sampling parameter.
+          example: 40
+        top_p:
+          type: number
+          format: double
+          description: Top-P nucleus sampling parameter.
+          example: 0.9
+        num_predict:
+          type: integer
+          description: Maximum number of tokens to generate.
+          example: 2048
+        thinking:
+          type: boolean
+          description: Flag enabling/disabling thinking output if supported.
+          example: false
+
+    # Request for /api/generate
+    GenerateRequest:
+      type: object
+      description: Request payload for text generation.
+      properties:
+        model:
+          type: string
+          description: Name of the model to use.
+          example: "gemma-2b-it.litertlm"
+        prompt:
+          type: string
+          description: Text prompt to generate completion for.
+          example: "Why is the sky blue?"
+        stream:
+          type: boolean
+          default: true
+          description: If false, the response will be returned as a single JSON object.
+        format:
+          type: string
+          nullable: true
+          description: Output format (e.g., "json").
+        options:
+          $ref: '#/components/schemas/InferenceOptions'
+        system:
+          type: string
+          nullable: true
+          description: System prompt to override modelfile default.
+        template:
+          type: string
+          nullable: true
+          description: Prompt template string.
+        context:
+          type: array
+          items:
+            type: integer
+          nullable: true
+          description: Token encoding context history from prior response.
+        raw:
+          type: boolean
+          nullable: true
+          description: If true, no formatting is applied to the prompt.
+        keep_alive:
+          type: string
+          nullable: true
+          description: Duration to keep the model loaded in memory.
+      required:
+        - model
+        - prompt
+
+    # Response for /api/generate
+    GenerateResponse:
+      type: object
+      description: Response payload for text generation.
+      properties:
+        model:
+          type: string
+          example: "gemma-2b-it.litertlm"
+        created_at:
+          type: string
+          format: date-time
+          example: "2024-05-01T12:00:00Z"
+        response:
+          type: string
+          description: Generated text response.
+          example: "The sky appears blue because Rayleigh scattering..."
+        done:
+          type: boolean
+          description: Indicates if generation is complete.
+          example: true
+        total_duration:
+          type: integer
+          format: int64
+          description: Total time spent processing request in nanoseconds.
+          example: 1500000000
+        load_duration:
+          type: integer
+          format: int64
+          nullable: true
+          description: Time spent loading the model in nanoseconds.
+        prompt_eval_count:
+          type: integer
+          description: Number of tokens in prompt evaluated.
+          example: 8
+        eval_count:
+          type: integer
+          description: Number of tokens generated in response.
+          example: 42
+        context:
+          type: array
+          items:
+            type: integer
+          nullable: true
+          description: Conversation context token history array.
+      required:
+        - model
+        - created_at
+        - response
+        - done
+
+    # Structure of a single message in a chat history
+    ChatMessage:
+      type: object
+      description: A message object in a chat completion request or response.
+      properties:
+        role:
+          type: string
+          enum: [system, user, assistant]
+          description: Role of the message author.
+          example: "user"
+        content:
+          type: string
+          description: Text content of the message.
+          example: "Hello! How can you help me today?"
+        images:
+          type: array
+          items:
+            type: string
+          nullable: true
+          description: Optional base64-encoded image strings.
+      required:
+        - role
+        - content
+
+    # Request for /api/chat
+    ChatRequest:
+      type: object
+      description: Request payload for chat completion.
+      properties:
+        model:
+          type: string
+          description: Name of the model to use.
+          example: "gemma-2b-it.litertlm"
+        messages:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChatMessage'
+          description: List of messages forming the conversation thread.
+        stream:
+          type: boolean
+          default: true
+          description: If false, the response will be returned as a single JSON object.
+        format:
+          type: string
+          nullable: true
+          description: Output format (e.g. "json").
+        options:
+          $ref: '#/components/schemas/InferenceOptions'
+        keep_alive:
+          type: string
+          nullable: true
+          description: Duration to keep model loaded in memory.
+      required:
+        - model
+        - messages
+
+    # Response for /api/chat
+    ChatResponse:
+      type: object
+      description: Response payload for chat completion.
+      properties:
+        model:
+          type: string
+          example: "gemma-2b-it.litertlm"
+        created_at:
+          type: string
+          format: date-time
+          example: "2024-05-01T12:00:00Z"
+        message:
+          $ref: '#/components/schemas/ChatMessage'
+        done:
+          type: boolean
+          description: Indicates if chat generation is complete.
+          example: true
+        total_duration:
+          type: integer
+          format: int64
+          description: Total time spent processing request in nanoseconds.
+          example: 1200000000
+        load_duration:
+          type: integer
+          format: int64
+          nullable: true
+          description: Time spent loading the model in nanoseconds.
+        prompt_eval_count:
+          type: integer
+          description: Number of tokens evaluated in prompt.
+          example: 10
+        eval_count:
+          type: integer
+          description: Number of tokens generated in response.
+          example: 25
+      required:
+        - model
+        - created_at
+        - message
+        - done
